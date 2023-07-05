@@ -1,0 +1,21 @@
+const COOKIE_NS = 'cookie'
+const SESSION_STORAGE_NS = 'sessionStorage'
+const LOCAL_STORAGE_NS = 'localStorage'
+const COOKIE_STORE_NS = 'cookieStore'
+
+export const STORE = {
+  // Methods
+  GET_COOKIE: COOKIE_NS + '.getItem',
+  SET_COOKIE: COOKIE_NS + '.setItem',
+  GET_SESSION_STORAGE_ITEM: SESSION_STORAGE_NS + '.getItem',
+  SET_SESSION_STORAGE_ITEM: SESSION_STORAGE_NS + '.setItem',
+  GET_LOCAL_STORAGE_ITEM: LOCAL_STORAGE_NS + '.getItem',
+  SET_LOCAL_STORAGE_ITEM: LOCAL_STORAGE_NS + '.setItem',
+  GET_COOKIE_STORE_ITEM: COOKIE_STORE_NS + '.get',
+  SET_COOKIE_STORE_ITEM: COOKIE_STORE_NS + '.set',
+  // Events
+  ON_COOKIE_CHANGE: COOKIE_NS + '.onChange',
+  ON_SESSION_STORAGE_CHANGE: SESSION_STORAGE_NS + '.onChange',
+  ON_LOCAL_STORAGE_CHANGE: LOCAL_STORAGE_NS + '.onChange',
+  ON_COOKIE_STORE_CHANGE: COOKIE_STORE_NS + '.onChange',
+}

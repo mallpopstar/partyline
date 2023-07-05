@@ -1,0 +1,83 @@
+:root {
+  /* Light */
+  --light-color-background: #ffffff;
+  --light-color-background-secondary: #ffffff;
+  --light-color-warning-text: #222;
+  --light-color-background-warning: #e6e600;
+  --light-color-icon-background: var(--light-color-background);
+  --light-color-accent: #f8f8f8;
+  --light-color-text: #222;
+  --light-color-text-aside: #707070;
+  --light-color-link: #4da6ff;
+  --light-color-ts: #db1373;
+  --light-color-ts-interface: #139d2c;
+  --light-color-ts-enum: #9c891a;
+  --light-color-ts-class: #2484e5;
+  --light-color-ts-function: #572be7;
+  --light-color-ts-namespace: #b111c9;
+  --light-color-ts-private: #707070;
+  --light-color-ts-variable: #4d68ff;
+  --light-external-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='10' height='10'><path fill-opacity='0' stroke='%23000' stroke-width='10' d='m43,35H5v60h60V57M45,5v10l10,10-30,30 20,20 30-30 10,10h10V5z'/></svg>");
+  --light-color-scheme: light;
+
+  /* Dark */
+  --dark-color-background: #2b2e33;
+  --dark-color-background-secondary: #1e2024;
+  --dark-color-background-warning: #bebe00;
+  --dark-color-warning-text: #222;
+  --dark-color-icon-background: var(--dark-color-background-secondary);
+  --dark-color-accent: #3a3c42;
+  --dark-color-text: #f5f5f5;
+  --dark-color-text-aside: #dddddd;
+  --dark-color-link: #00aff4;
+  --dark-color-ts: #ff6492;
+  --dark-color-ts-interface: #6cff87;
+  --dark-color-ts-enum: #f4d93e;
+  --dark-color-ts-class: #61b0ff;
+  --dark-color-ts-function: #9772ff;
+  --dark-color-ts-namespace: #e14dff;
+  --dark-color-ts-private: #e2e2e2;
+  --dark-color-ts-variable: #4d68ff;
+  --dark-external-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='10' height='10'><path fill-opacity='0' stroke='%23fff' stroke-width='10' d='m43,35H5v60h60V57M45,5v10l10,10-30,30 20,20 30-30 10,10h10V5z'/></svg>");
+  --dark-color-scheme: dark;
+}
+
+.tsd-page-title {
+  display: none;
+}
+
+.tsd-panel h2 {
+  line-height: 2rem;
+}
+
+.tsd-navigation.primary {
+  display: none;
+}
+
+.tsd-filter-visibility {
+  display: none;
+}
+
+#tsd-sidebar-links a {
+  color: rgb(0, 162, 255);
+}
+
+:root[data-theme='light'] pre {
+  border: 1px solid #dddddd;
+  padding: 1rem;
+}
+
+:root[data-theme='dark'] pre {
+  border: 1px solid #373737;
+  padding: 1rem;
+}
+
+.link-doc {
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.footer {
+  padding-top: 1rem;
+  font-size: 0.8rem;
+}

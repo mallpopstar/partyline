@@ -30,6 +30,7 @@ export const connect = (target: any, port: MessagePort) => {
 export const onConnection = (target: Window, handler: (port: MessagePort) => void) => {
   const messageHandler = (event: MessageEvent) => {
     const { data, ports } = event
+    debugger
     if (ports && ports.length > 0) {
       target.removeEventListener('message', messageHandler)
       if (data.type === PORT_CONNECTION) {

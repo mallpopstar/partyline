@@ -1,5 +1,267 @@
 import { CONNECTION } from './consts/connection'
-import { uuid } from './helpers/uuid'
+import { ELEMENT } from './consts/element'
+import { FORM } from './consts/form'
+import { INPUT } from './consts/input'
+import { NETWORK } from './consts/network'
+import { STORE } from './consts/store'
+import { WINDOW } from './consts/page'
+import { createUniqueId } from './helpers/createUniqueId'
+
+export type ElementCallback = (data: { selector: string; html: string }) => void
+export type InputCallback = (data: { selector: string; value: string }) => void
+export type FormCallback = (data: { selector: string; value: string }) => void
+export type NetworkCallback = (data: string) => void
+export type StoreCallback = (data: string) => void
+
+export interface IElement {
+  add: (opts: { selector: string; html: string; position?: InsertPosition; applyToAll?: boolean }) => Promise<any>
+  exists: (opts: { selector: string }) => Promise<any>
+  find: (opts: { selector: string }) => Promise<any>
+  remove: (opts: { selector: string }) => Promise<any>
+  query: (opts: { queryPath: string }) => Promise<any>
+
+  // mutations
+  replace: (opts: { selector: string; html: string; applyToAll?: boolean }) => Promise<any>
+  addClasses: (opts: { selector: string; classes: string[]; applyToAll?: boolean }) => Promise<any>
+  removeClasses: (opts: { selector: string; classes: string[]; applyToAll?: boolean }) => Promise<any>
+  addStyles: (opts: { selector: string; styles: { [key: string]: string }; applyToAll?: boolean }) => Promise<any>
+  restoreStyles: (opts?: { selector: string; applyToAll?: boolean }) => Promise<any>
+
+  // event handlers
+  onClick: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
+  onHover: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
+  onMouseDown: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
+  onMouseUp: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
+  onMouseOver: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
+  onMutate: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
+  onToggle: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
+}
+
+class Element implements IElement {
+  constructor(private sender: ISender) {}
+
+  async addStyles(opts: { selector: string; styles: string | { [key: string]: string }; applyToAll?: boolean }) {
+    return await this.sender.sendRequest(ELEMENT.ADD_STYLES, opts)
+  }
+
+  async restoreStyles(opts?: { selector: string; applyToAll?: boolean }) {
+    return await this.sender.sendRequest(ELEMENT.RESTORE_STYLES, opts)
+  }
+
+  async add(opts: { selector: string; html: string; position?: InsertPosition; applyToAll?: boolean }) {
+    return await this.sender.sendRequest(ELEMENT.ADD, opts)
+  }
+
+  async exists(opts: { selector: string }) {
+    return await this.sender.sendRequest(ELEMENT.EXISTS, opts)
+  }
+
+  async find(opts: { selector: string }) {
+    return await this.sender.sendRequest(ELEMENT.FIND, opts)
+  }
+
+  async remove(opts: { selector: string }) {
+    return await this.sender.sendRequest(ELEMENT.REMOVE, opts)
+  }
+
+  async addClasses(opts: { selector: string; classes: string[]; applyToAll?: boolean }) {
+    return await this.sender.sendRequest(ELEMENT.ADD_CLASSES, opts)
+  }
+
+  async removeClasses(opts: { selector: string; classes: string[]; applyToAll?: boolean }) {
+    return await this.sender.sendRequest(ELEMENT.REMOVE_CLASSES, opts)
+  }
+
+  async replace(opts: { selector: string; html: string; applyToAll?: boolean }) {
+    return await this.sender.sendRequest(ELEMENT.REPLACE, opts)
+  }
+
+  async query(opts: { queryPath: string }) {
+    return await this.sender.sendRequest(ELEMENT.QUERY, opts)
+  }
+
+  // event: string, target: string | { [key: string]: string }, callback: ElementCallback
+  // event handlers
+  onClick(target: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_CLICK, target, callback)
+  }
+
+  onHover(target: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_HOVER, target, callback)
+  }
+
+  onMouseDown(target: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_MOUSEDOWN, target, callback)
+  }
+
+  onMouseUp(target: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_MOUSEUP, target, callback)
+  }
+
+  onMouseOver(target: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_MOUSE_OVER, target, callback)
+  }
+
+  onMutate(target: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_MUTATION, target, callback)
+  }
+
+  onToggle(target: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_TOGGLE, target, callback)
+  }
+}
+
+export interface IInput {
+  onBlur: (target: string | { [key: string]: string }, callback: InputCallback) => Function
+  onChange: (target: string | { [key: string]: string }, callback: InputCallback) => Function
+  onFocus: (target: string | { [key: string]: string }, callback: InputCallback) => Function
+  onInput: (target: string | { [key: string]: string }, callback: InputCallback) => Function
+}
+
+class Input implements IInput {
+  constructor(private sender: ISender) {}
+
+  onBlur(target: string | { [key: string]: string }, callback: InputCallback): Function {
+    return this.sender.subscribe(INPUT.ON_BLUR, target, callback)
+  }
+
+  onChange(target: string | { [key: string]: string }, callback: InputCallback): Function {
+    return this.sender.subscribe(INPUT.ON_CHANGE, target, callback)
+  }
+
+  onFocus(target: string | { [key: string]: string }, callback: InputCallback): Function {
+    return this.sender.subscribe(INPUT.ON_FOCUS, target, callback)
+  }
+
+  onInput(target: string | { [key: string]: string }, callback: InputCallback): Function {
+    return this.sender.subscribe(INPUT.ON_INPUT, target, callback)
+  }
+}
+
+export interface IForm {
+  onSubmit: (target: string | { [key: string]: string }, callback: FormCallback) => Function
+}
+
+class Form implements IForm {
+  constructor(private sender: ISender) {}
+
+  onSubmit(target: string | { [key: string]: string }, callback: FormCallback): Function {
+    return this.sender.subscribe(FORM.ON_SUBMIT, target, callback)
+  }
+}
+
+export interface INetwork {
+  fetch: (url: string, options?: any) => Promise<any>
+
+  // event handlers
+  onFetch: (target: string | { [key: string]: string }, callback: NetworkCallback) => Function
+  onHTTP: (target: string | { [key: string]: string }, callback: NetworkCallback) => Function
+}
+
+class Network implements INetwork {
+  constructor(private sender: ISender) {}
+
+  async fetch(url: string, options?: any) {
+    return await this.sender.sendRequest(NETWORK.FETCH, url, options)
+  }
+
+  // event handlers
+  onFetch(target: string | { [key: string]: string }, callback: NetworkCallback): Function {
+    return this.sender.subscribe(NETWORK.ON_FETCH, target, callback)
+  }
+
+  onHTTP(target: string | { [key: string]: string }, callback: NetworkCallback): Function {
+    return this.sender.subscribe(NETWORK.ON_HTTP, target, callback)
+  }
+}
+
+export interface IStore {
+  getCookie: (name: string) => Promise<any>
+  getCookieStoreItem: (name: string) => Promise<any>
+  getLocalStorageItem: (name: string) => Promise<any>
+  getSessionStorageItem: (name: string) => Promise<any>
+
+  setCookie: (name: string, value: any, options?: any) => Promise<any>
+  setCookieStoreItem: (name: string, value: any, options?: any) => Promise<any>
+  setLocalStorageItem: (name: string, value: any) => Promise<any>
+  setSessionStorageItem: (name: string, value: any) => Promise<any>
+
+  onCookieChange: (callback: StoreCallback) => Function
+  onCookieStoreChange: (callback: StoreCallback) => Function
+  onLocalStorageChange: (callback: StoreCallback) => Function
+  onSessionStorageChange: (callback: StoreCallback) => Function
+}
+
+class StoreSender implements IStore {
+  constructor(private sender: ISender) {}
+
+  async getCookie(name: string) {
+    return await this.sender.sendRequest(STORE.GET_COOKIE, name)
+  }
+
+  async getCookieStoreItem(name: string) {
+    return await this.sender.sendRequest(STORE.GET_COOKIE_STORE_ITEM, name)
+  }
+
+  async getLocalStorageItem(name: string) {
+    return await this.sender.sendRequest(STORE.GET_LOCAL_STORAGE_ITEM, name)
+  }
+
+  async getSessionStorageItem(name: string) {
+    return await this.sender.sendRequest(STORE.GET_SESSION_STORAGE_ITEM, name)
+  }
+
+  async setCookie(name: string, value: any, options?: any) {
+    return await this.sender.sendRequest(STORE.SET_COOKIE, name, value, options)
+  }
+
+  async setCookieStoreItem(name: string, value: any, options?: any) {
+    return await this.sender.sendRequest(STORE.SET_COOKIE_STORE_ITEM, name, value, options)
+  }
+
+  async setLocalStorageItem(name: string, value: any) {
+    return await this.sender.sendRequest(STORE.SET_LOCAL_STORAGE_ITEM, name, value)
+  }
+
+  async setSessionStorageItem(name: string, value: any) {
+    return await this.sender.sendRequest(STORE.SET_SESSION_STORAGE_ITEM, name, value)
+  }
+
+  onCookieChange(callback: StoreCallback): Function {
+    return this.sender.subscribe(STORE.ON_COOKIE_CHANGE, '', callback)
+  }
+
+  onCookieStoreChange(callback: StoreCallback): Function {
+    return this.sender.subscribe(STORE.ON_COOKIE_STORE_CHANGE, '', callback)
+  }
+
+  onLocalStorageChange(callback: StoreCallback): Function {
+    return this.sender.subscribe(STORE.ON_LOCAL_STORAGE_CHANGE, '', callback)
+  }
+
+  onSessionStorageChange(callback: StoreCallback): Function {
+    return this.sender.subscribe(STORE.ON_SESSION_STORAGE_CHANGE, '', callback)
+  }
+}
+
+export interface IPage {
+  getUrl: () => Promise<any>
+
+  // event handlers
+  onUrlChange: (filter: string, callback: (url: string) => void) => Function
+}
+
+class Page implements IPage {
+  constructor(private sender: ISender) {}
+
+  async getUrl() {
+    return await this.sender.sendRequest(WINDOW.GET_URL)
+  }
+
+  onUrlChange(filter: string, callback: (url: string) => void) {
+    return this.sender.subscribe(WINDOW.ON_URL_CHANGE, filter, callback)
+  }
+}
 
 export interface ISender {
   id: string
@@ -7,12 +269,18 @@ export interface ISender {
   subscribe: (event: string, selector: string | { [key: string]: string }, callback: any) => () => void
   connect: (port: MessagePort) => void
   disconnect: () => void
+  element: IElement
+  form: IForm
+  input: IInput
+  network: INetwork
+  store: IStore
+  // page: IPage;
 }
 
 export class Sender implements ISender {
-  id = uuid()
+  id = createUniqueId()
   /** @private */
-  port?: MessagePort
+  dispatcher?: Window | Worker | MessagePort | BroadcastChannel
   /** @private */
   batchTimer: any = null
   /** @private */
@@ -21,6 +289,22 @@ export class Sender implements ISender {
   promises: Map<string, any> = new Map()
   /** @private */
   eventHandlers: Map<string, any> = new Map()
+
+  element: IElement
+  form: IForm
+  input: IInput
+  network: INetwork
+  store: IStore
+  page: IPage
+
+  constructor() {
+    this.element = new Element(this)
+    this.form = new Form(this)
+    this.input = new Input(this)
+    this.network = new Network(this)
+    this.store = new StoreSender(this)
+    this.page = new Page(this)
+  }
 
   /** @private */
   preparePayload(data: any) {
@@ -40,20 +324,31 @@ export class Sender implements ISender {
   }
 
   /** @private */
-  batch(params: { id: string; path: string; args: any[] }) {
+  batch(params: { id: string; type: string; path: string; args: any[] }) {
     this.batchMessages.push(params)
     clearTimeout(this.batchTimer)
-
     // if batch is full, send it max is 10
     if (this.batchMessages.length >= 10) {
-      this.port?.postMessage({ batch: this.preparePayload(this.batchMessages) })
+      if (this.dispatcher instanceof Window) {
+        this.dispatcher.postMessage({ batch: this.preparePayload(this.batchMessages) }, '*')
+      } else {
+        this.dispatcher?.postMessage({
+          batch: this.preparePayload(this.batchMessages),
+        })
+      }
       this.batchMessages.length = 0
       return
     }
 
     this.batchTimer = setTimeout(() => {
       try {
-        this.port?.postMessage({ batch: this.preparePayload(this.batchMessages) })
+        if (this.dispatcher instanceof Window) {
+          this.dispatcher.postMessage({ batch: this.preparePayload(this.batchMessages) }, '*')
+        } else {
+          this.dispatcher?.postMessage({
+            batch: this.preparePayload(this.batchMessages),
+          })
+        }
       } catch (e: any) {
         if (import.meta.env.DEV) {
           console.error(e.message)
@@ -64,52 +359,87 @@ export class Sender implements ISender {
   }
 
   async sendRequest<T = any>(path = '', ...args: any[]) {
-    const id = uuid()
-    this.batch({ id, path, args })
+    const id = createUniqueId()
+    const type = 'request'
+    this.batch({ id, type, path, args })
     return this.createTimeoutPromise<T>(id, path)
   }
 
   subscribe(event: string, target: string | { [key: string]: string }, callback: any) {
-    const id = uuid()
+    const id = createUniqueId()
+    const type = 'subscription'
     this.eventHandlers.set(id, callback)
-    this.batch({ id, path: event, args: [target] })
+    this.batch({ id, type, path: event, args: [target] })
     return () => {
       this.eventHandlers.delete(id)
       setTimeout(() => {
-        this.port?.postMessage({ id, path: 'off.' + event, args: [target] })
+        if (this.dispatcher instanceof Window) {
+          this.dispatcher.postMessage({ id, path: 'off.' + event, args: [target] }, '*')
+        } else if (
+          this.dispatcher instanceof Worker ||
+          this.dispatcher instanceof MessagePort ||
+          this.dispatcher instanceof BroadcastChannel
+        ) {
+          this.dispatcher.postMessage({ id, path: 'off.' + event, args: [target] })
+        }
       }, 0)
     }
   }
 
-  connect(messagePort: MessagePort) {
-    this.port = messagePort
-
-    this.port.onmessage = e => {
-      const { id, data, error } = e.data
-      const promise = this.promises.get(id)
-      if (promise) {
-        promise.timer && clearTimeout(promise.timer)
-        this.promises.delete(id)
-        if (error) {
-          promise.reject(error)
+  connect(dispatcher: Window | Worker | MessagePort | BroadcastChannel) {
+    if (dispatcher instanceof Window) {
+      dispatcher.addEventListener('message', (e: any) => {
+        const { id, type, data, error } = e.data
+        const promise = this.promises.get(id)
+        if (promise) {
+          promise.timer && clearTimeout(promise.timer)
+          this.promises.delete(id)
+          if (error) {
+            promise.reject(error)
+          } else {
+            promise.resolve(data)
+          }
         } else {
-          promise.resolve(data)
+          const callback = this.eventHandlers.get(id)
+          if (callback) {
+            callback(data)
+          }
         }
-      } else {
-        const callback = this.eventHandlers.get(id)
-        if (callback) {
-          callback(data)
+      })
+      this.dispatcher = dispatcher as any
+    } else if ('onmessage' in dispatcher) {
+      dispatcher.onmessage = e => {
+        const { id, data, error } = e.data
+        const promise = this.promises.get(id)
+        if (promise) {
+          promise.timer && clearTimeout(promise.timer)
+          this.promises.delete(id)
+          if (error) {
+            promise.reject(error)
+          } else {
+            promise.resolve(data)
+          }
+        } else {
+          const callback = this.eventHandlers.get(id)
+          if (callback) {
+            callback(data)
+          }
         }
       }
+      this.dispatcher = dispatcher
     }
 
     return new Promise(resolve => setTimeout(resolve, 0))
   }
 
   disconnect() {
-    if (this.port) {
+    if (this.dispatcher) {
       // loop through all promises and reject them
-      this.port.postMessage({ id: this.id, path: CONNECTION.DISCONNECT })
+      if (this.dispatcher instanceof Window) {
+        this.dispatcher.postMessage({ id: this.id, type: 'request', path: CONNECTION.DISCONNECT }, '*')
+      } else {
+        this.dispatcher.postMessage({ id: this.id, type: 'request', path: CONNECTION.DISCONNECT })
+      }
     }
   }
 

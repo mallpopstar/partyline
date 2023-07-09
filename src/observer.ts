@@ -6,32 +6,33 @@ import { onUrlChange } from './observers/url'
 import { query } from './dom/query'
 
 export class Observer {
-  port?: MessagePort
-  handlers: Map<string, any> = new Map()
-  disconnects: Map<string, any> = new Map()
-  cookie: Cookie = new Cookie()
+  dispatcher?: Window | Worker | MessagePort | BroadcastChannel
+  #handlers: Map<string, any> = new Map()
+  #disconnects: Map<string, any> = new Map()
+  #cookie: Cookie = new Cookie()
 
-  // constructor(port: MessagePort) {
+  // constructor(port: Message Port) {
   //   this.port = port
   // }
 
   pointerEvent(id: string, selector: string, path: string) {
     const el = document.querySelector(selector)
-    if (!el) return
+    if (!el || !path) return
 
-    const event = path.split('.').pop() + ''
+    const event = (path?.split('.').pop() + '').replace('on', '').toLowerCase()
     const handler = (evt: any) => {
-      this.port?.postMessage({
+      this.dispatcher?.postMessage({
         id,
+        type: 'response',
         path,
         data: {
           selector,
-          el: evt.currentTarget.outerHTML,
+          html: evt.currentTarget.outerHTML,
         },
       })
     }
 
-    this.handlers.set(id, () => {
+    this.#handlers.set(id, () => {
       const el = document.querySelector(selector)
       if (el) {
         el.removeEventListener(event, handler)
@@ -42,10 +43,10 @@ export class Observer {
 
   inputEvent(id: string, selector: string, path: string) {
     const el = document.querySelector(selector)
-    if (!el) return
+    if (!el || !path) return
 
     // get event from path
-    const event = path.split('.').pop() + ''
+    const event = path?.split('.').pop() + ''
     let prevValue: string
     let timer: any = null
     const handler = (evt: any) => {
@@ -54,11 +55,11 @@ export class Observer {
       if (value === prevValue) return
       prevValue = value
       timer = setTimeout(() => {
-        this.port?.postMessage({ id, path, data: { selector, value } })
+        this.dispatcher?.postMessage({ id,type: 'response', path, data: { selector, value } })
       }, 250)
     }
 
-    this.handlers.set(id, () => {
+    this.#handlers.set(id, () => {
       const el = document.querySelector(selector)
       if (el) {
         el.removeEventListener(event, handler)
@@ -79,10 +80,10 @@ export class Observer {
       for (let entry of entries) {
         values[entry[0]] = entry[1]
       }
-      this.port?.postMessage({ id, path: 'on.formSubmit', data: values })
+      this.dispatcher?.postMessage({ id, type: 'response', path: 'on.formSubmit', data: values })
     }
 
-    this.handlers.set(id, () => {
+    this.#handlers.set(id, () => {
       const el = document.querySelector(selector)
       if (el) {
         el.removeEventListener('submit', handler)
@@ -98,10 +99,14 @@ export class Observer {
       if (match && !regex.test(url)) {
         return
       }
-      this.port?.postMessage({ id, path, data: url })
+      if (this.dispatcher instanceof Window) {
+        this.dispatcher.postMessage({ id, type: 'response', path, data: url }, '*')
+      } else {
+        this.dispatcher?.postMessage({ id, type: 'response', path, data: url })
+      }
     }
 
-    this.handlers.set(id, onUrlChange(handler))
+    this.#handlers.set(id, onUrlChange(handler))
     handler()
   }
 
@@ -111,10 +116,10 @@ export class Observer {
     const handler = (response: { url: string; data: any }) => {
       const { url, data } = response
       if (match && !regex.test(url)) return
-      this.port?.postMessage({ id, path: 'on.fetch', url, data })
+      this.dispatcher?.postMessage({ id, type: 'response', path: 'on.fetch', url, data })
     }
 
-    this.handlers.set(id, onFetch(handler))
+    this.#handlers.set(id, onFetch(handler))
   }
 
   httpRequest(id: string, match: string) {
@@ -123,10 +128,10 @@ export class Observer {
     const handler = (data: { url: string; text: string }) => {
       const url = data.url
       if (match && !regex.test(url)) return
-      this.port?.postMessage({ id, path: 'on.http', url, data })
+      this.dispatcher?.postMessage({ id, type: 'response', path: 'on.http', url, data })
     }
 
-    this.handlers.set(id, onHTTP(handler))
+    this.#handlers.set(id, onHTTP(handler))
   }
 
   mutation(id: string, match: string) {
@@ -140,10 +145,10 @@ export class Observer {
       if (content === prevContent) return
       prevContent = content
 
-      this.port?.postMessage({ id, path: 'on.dom', data: content })
+      this.dispatcher?.postMessage({ id, type: 'response', path: 'on.dom', data: content })
     }
 
-    this.handlers.set(id, onInterval(handler))
+    this.#handlers.set(id, onInterval(handler))
   }
 
   sessionStorageChange(id: string, match: string, path: string) {
@@ -157,13 +162,13 @@ export class Observer {
         if (val === oldVal) return
         oldVal = val
 
-        this.port?.postMessage({ id, path, data: val })
+        this.dispatcher?.postMessage({ id, type: 'response', path, data: val })
       } catch (e) {
         console.log(path, match, e)
       }
     }
 
-    this.handlers.set(id, onInterval(handler))
+    this.#handlers.set(id, onInterval(handler))
   }
 
   localStorageChange(id: string, match: string, path: string) {
@@ -177,11 +182,11 @@ export class Observer {
         if (val === oldVal) return
         oldVal = val
 
-        this.port?.postMessage({ id, path, data: val })
+        this.dispatcher?.postMessage({ id, type: 'response', path, data: val })
       } catch (e) {}
     }
 
-    this.handlers.set(id, onInterval(handler))
+    this.#handlers.set(id, onInterval(handler))
   }
 
   cookieChange(id: string, match: string, path: string) {
@@ -191,15 +196,15 @@ export class Observer {
     let oldVal: string | null = null
     const handler = () => {
       try {
-        const val = this.cookie.getItem(match)
+        const val = this.#cookie.getItem(match)
         if (val === oldVal) return
         oldVal = val
 
-        this.port?.postMessage({ id, path, data: val })
+        this.dispatcher?.postMessage({ id, type: 'response', path, data: val })
       } catch (e) {}
     }
 
-    this.handlers.set(id, onInterval(handler))
+    this.#handlers.set(id, onInterval(handler))
   }
 
   cookieStorageChange(id: string, match: string, path: string) {
@@ -214,11 +219,11 @@ export class Observer {
         if (val === oldVal) return
         oldVal = val
 
-        this.port?.postMessage({ id, path, data: val })
+        this.dispatcher?.postMessage({ id, type: 'response', path, data: val })
       } catch (e) {}
     }
 
-    this.handlers.set(id, onInterval(handler))
+    this.#handlers.set(id, onInterval(handler))
   }
 
   /**
@@ -239,32 +244,32 @@ export class Observer {
 
       el = foundEl
       const html = foundEl?.outerHTML
-      this.port?.postMessage({ id, path: 'on.dom', data: html })
+      this.dispatcher?.postMessage({ id, type: 'response', path: 'on.dom', data: html })
     }
 
-    this.handlers.set(id, onInterval(handler))
+    this.#handlers.set(id, onInterval(handler))
   }
 
   off(id: string) {
-    const handler = this.handlers.get(id)
-    this.handlers.delete(id)
+    const handler = this.#handlers.get(id)
+    this.#handlers.delete(id)
     if (handler instanceof Function) handler()
   }
 
   disconnect(id: string) {
     const handler = () => {
-      this.port?.postMessage({ id, path: 'on.disconnect' })
-      this.handlers.forEach((_, id) => {
+      this.dispatcher?.postMessage({ id, type: 'response', path: 'on.disconnect' })
+      this.#handlers.forEach((_, id) => {
         this.off(id)
       })
     }
-    this.disconnects.set(id, handler)
+    this.#disconnects.set(id, handler)
   }
 
   execDisconnect() {
     // loop through disconnects and remove
-    this.disconnects.forEach(handler => handler())
+    this.#disconnects.forEach(handler => handler())
     // clear disconnects
-    this.disconnects.clear()
+    this.#disconnects.clear()
   }
 }

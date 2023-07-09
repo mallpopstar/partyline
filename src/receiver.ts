@@ -2,20 +2,19 @@ import { CONNECTION } from './consts/connection'
 import { Cookie } from './storage/cookie'
 import { DocumentElement } from './dom/element'
 import { ELEMENT } from './consts/element'
-import { ELEMENTS } from './consts/elements'
 import { FORM } from './consts/form'
 import { INPUT } from './consts/input'
 import { NETWORK } from './consts/network'
 import { Observer } from './observer'
 import { STORE } from './consts/store'
-import { WINDOW } from './consts/window'
+import { WINDOW } from './consts/page'
+import { createUniqueId } from './helpers/createUniqueId'
 import { getValue } from './helpers/value'
-import { uuid } from './helpers/uuid'
 
 declare const cookieStore: any
 
 export class Receiver {
-  id = uuid()
+  id = createUniqueId()
 
   // customPaths for overriding default paths
   #customPaths: Map<string, (...args: any[]) => any> = new Map()
@@ -32,7 +31,7 @@ export class Receiver {
   // dom is used as paths on execOn
   #element = new DocumentElement()
   // private port
-  #port?: MessagePort
+  #dispatcher?: Window | Worker | MessagePort | BroadcastChannel
   // logs messages to a handler
   #logger?: (...args: any[]) => void
   // private onDisconnect
@@ -41,20 +40,29 @@ export class Receiver {
   /**
    * Connects to the host application
    *
-   * @param port
+   * @param dispatcher
    * @param onDisconnect
    */
-  connect(port: MessagePort, onDisconnect?: () => void) {
-    this.#port = port
-    this.#on.port = port
-
-    port.onmessage = async (event: MessageEvent) => {
-      if (event.data.batch) {
-        return event.data.batch.forEach((payload: any) => this.#postMessage(payload))
+  connect(dispatcher: Window | Worker | MessagePort | BroadcastChannel, onDisconnect?: () => void) {
+    if (dispatcher instanceof Window) {
+      dispatcher.addEventListener('message', (event: any) => {
+        if (event.data.batch) {
+          return event.data.batch.forEach((payload: any) => this.#postMessage(payload))
+        }
+        this.#postMessage(event.data)
+      })
+      this.#onDisconnect = onDisconnect
+    } else if ('postMessage' in dispatcher) {
+      dispatcher.onmessage = async (event: any) => {
+        if (event.data.batch) {
+          return event.data.batch.forEach((payload: any) => this.#postMessage(payload))
+        }
+        this.#postMessage(event.data)
       }
-      this.#postMessage(event.data)
+      this.#onDisconnect = onDisconnect
     }
-    this.#onDisconnect = onDisconnect
+    this.#dispatcher = dispatcher
+    this.#on.dispatcher = dispatcher
   }
 
   /**
@@ -63,8 +71,10 @@ export class Receiver {
   disconnect() {
     this.#on.execDisconnect()
     setTimeout(() => {
-      this.#port?.close()
-      this.#port = undefined
+      if (this.#dispatcher instanceof BroadcastChannel || this.#dispatcher instanceof MessagePort) {
+        this.#dispatcher?.close()
+      }
+      this.#dispatcher = undefined
     }, 1000)
     this.#onDisconnect?.()
   }
@@ -75,7 +85,7 @@ export class Receiver {
    * @param path
    * @param callback
    */
-  registerPath(path: string, callback: (...args: any[]) => any) {
+  registerPath(path: string, callback: (requestId: string, ...args: any[]) => any) {
     this.#customPaths.set(path, callback)
   }
 
@@ -137,44 +147,91 @@ export class Receiver {
    * @param position
    * @returns
    */
-  #execDom(path: string, selector: string | string[], value: string, position: InsertPosition = 'beforeend') {
+  #execDom(
+    path: string,
+    opts: {
+      selector: string
+      html?: string
+      styles?: string
+      classes?: string
+      applyToAll?: boolean
+      position?: InsertPosition
+    }
+  ) {
+    const { selector, applyToAll } = opts
+
     switch (path) {
-      case ELEMENT.ADD:
-        return this.#element.add(selector as string, value, position)
-      case ELEMENTS.ADD:
-        return this.#element.addToAll(selector as string, value, position)
-      case ELEMENT.FIND:
-        return this.#element.get(selector as string, value as any)
-      case ELEMENTS.FIND:
-        return this.#element.getAll(selector as string)
       case ELEMENT.EXISTS:
-        return this.#element.exists(selector)
+        return this.#element.exists(opts)
+      case ELEMENT.ADD:
+        if (!selector || !opts.html) return
+        if (applyToAll)
+          return this.#element.addToAll({
+            selector,
+            html: opts.html,
+            position: opts.position,
+          })
+        return this.#element.add({
+          selector,
+          html: opts.html,
+          position: opts.position,
+        })
+      case ELEMENT.FIND:
+        if (applyToAll) return this.#element.getAll(opts)
+        return this.#element.get(opts)
       case ELEMENT.REMOVE:
-        return this.#element.remove(selector as string)
-      case ELEMENTS.REMOVE:
-        return this.#element.removeAll(selector as string)
+        if (applyToAll) return this.#element.removeAll(opts)
+        return this.#element.remove(opts)
       case ELEMENT.REPLACE:
-        return this.#element.replace(selector as string, value!)
-      case ELEMENTS.REPLACE:
-        return this.#element.replaceAll(selector as string, value!)
+        if (applyToAll)
+          return this.#element.replaceAll({
+            selector,
+            html: opts.html || '',
+          })
+        return this.#element.replace({
+          selector,
+          html: opts.html || '',
+        })
       case ELEMENT.ADD_STYLES:
-        return this.#element.addStyles(selector as string, value!)
-      case ELEMENTS.ADD_STYLES:
-        return this.#element.addStylesToAll(selector as string, value!)
+        if (applyToAll)
+          return this.#element.addStylesToAll({
+            selector,
+            styles: opts.styles || '',
+          })
+        return this.#element.addStyles({
+          selector,
+          styles: opts.styles || '',
+        })
       case ELEMENT.RESTORE_STYLES:
-        return this.#element.restoreStyles(selector as string)
-      case ELEMENTS.RESTORE_STYLES:
-        return this.#element.restoreStylesToAll()
+        if (applyToAll) return this.#element.restoreStylesToAll()
+        return this.#element.restoreStyles(opts)
+      case ELEMENT.ADD_CLASSES:
+        if (applyToAll)
+          return this.#element.addClassesToAll({
+            selector,
+            classes: opts.classes || '',
+          })
+        return this.#element.addClasses({
+          selector,
+          classes: opts.classes || '',
+        })
       case ELEMENT.REMOVE_CLASSES:
-        return this.#element.removeClasses(selector as string, value!)
-      case ELEMENTS.REMOVE_CLASSES:
-        return this.#element.removeClassesToAll(selector as string, value!)
+        if (applyToAll)
+          return this.#element.removeClassesToAll({
+            selector,
+            classes: opts.classes || '',
+          })
+        return this.#element.removeClasses({
+          selector,
+          classes: opts.classes || '',
+        })
     }
   }
 
-  async #postMessage(data: { id: string; path: string; args: any[] }) {
+  async #postMessage(data: { id: string; type: string; path: string; args: any[] }) {
     try {
-      const { id, path, args } = data
+      const { id, type, path, args } = data
+      if(!id || !type || !path) return
       // log the message
       this.#logger?.(data)
       // check if the path is a custom path
@@ -183,7 +240,10 @@ export class Receiver {
         if (this.#isPromise(value)) {
           value = await value
         }
-        return this.#port?.postMessage({ id, data: value })
+        if (this.#dispatcher instanceof Window) {
+          return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
+        }
+        return this.#dispatcher?.postMessage({ id, type, data: value })
       }
 
       if (this.#isFetch(path)) {
@@ -196,7 +256,7 @@ export class Receiver {
       }
 
       if (this.#isOn(path)) {
-        return this.#execOn(id, args[0], path)
+        return this.#execOn(id, args?.[0], path)
       }
 
       if (this.#isDisconnect(path)) {
@@ -211,7 +271,10 @@ export class Receiver {
           if (this.#isPromise(value)) {
             value = await value
           }
-          return this.#port?.postMessage({ id, data: value })
+          if (this.#dispatcher instanceof Window) {
+            return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
+          }
+          return this.#dispatcher?.postMessage({ id, type, data: value })
         }
       }
 
@@ -223,7 +286,10 @@ export class Receiver {
           if (this.#isPromise(value)) {
             value = await value
           }
-          return this.#port?.postMessage({ id, data: value })
+          if (this.#dispatcher instanceof Window) {
+            return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
+          }
+          return this.#dispatcher?.postMessage({ id, type, data: value })
         }
       }
 
@@ -235,7 +301,10 @@ export class Receiver {
           if (this.#isPromise(value)) {
             value = await value
           }
-          return this.#port?.postMessage({ id, data: value })
+          if (this.#dispatcher instanceof Window) {
+            return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
+          }
+          return this.#dispatcher?.postMessage({ id, type, data: value })
         }
       }
 
@@ -247,14 +316,17 @@ export class Receiver {
           if (this.#isPromise(value)) {
             value = await value
           }
-          return this.#port?.postMessage({ id, data: value })
+          if (this.#dispatcher instanceof Window) {
+            return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
+          }
+          return this.#dispatcher?.postMessage({ id, type, data: value })
         }
       }
 
       if (this.#isElement(path)) {
-        const [selector, html, position] = args
-        let value = this.#execDom(path, selector, html, position)
-        return this.#port?.postMessage({ id, data: value })
+        const opts = args[0]
+        let value = this.#execDom(path, opts)
+        return this.#dispatcher?.postMessage({ id, type, data: value })
       }
       let value = getValue(path)
       if (this.#isFunction(value)) {
@@ -273,9 +345,17 @@ export class Receiver {
         value = undefined
       }
 
-      this.#port?.postMessage({ id: data.id, data: value })
+      if (this.#dispatcher instanceof Window) {
+        return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
+      }
+      this.#dispatcher?.postMessage({ id: data.id, type, data: value })
     } catch (e: any) {
-      this.#port?.postMessage({ id: data.id, error: e.message })
+      const type = 'response'
+      if (this.#dispatcher instanceof Window) {
+        this.#dispatcher?.postMessage({ id: data.id, type, error: e.message }, '*')
+      } else {
+        this.#dispatcher?.postMessage({ id: data.id, type, error: e.message })
+      }
     }
   }
 
@@ -284,8 +364,8 @@ export class Receiver {
       // if there is a . in the path pop the last item off the path and get the value of that
       // then call the method on that value
       let thisArg = window
-      if (path.includes('.')) {
-        const thisPath = path.split('.').slice(0, -1).join('.')
+      if (path?.includes('.')) {
+        const thisPath = path?.split('.').slice(0, -1).join('.')
         thisArg = getValue(thisPath, target)
       }
       return method.apply(thisArg, args)
@@ -295,31 +375,31 @@ export class Receiver {
   }
 
   #isOn(path: string) {
-    return path.includes('.on')
+    return path?.includes('.on')
   }
 
   #isOff(path: string) {
-    return path.includes('off.')
+    return path?.includes('off.')
   }
 
   #isCookie(path: string) {
-    return path.startsWith('cookie')
+    return path?.startsWith('cookie')
   }
 
   #isSessionStorage(path: string) {
-    return path.startsWith('sessionStorage')
+    return path?.startsWith('sessionStorage')
   }
 
   #isLocalStorage(path: string) {
-    return path.startsWith('localStorage')
+    return path?.startsWith('localStorage')
   }
 
   #isCookieStore(path: string) {
-    return path.startsWith('cookieStore')
+    return path?.startsWith('cookieStore')
   }
 
   #isElement(path: string) {
-    return path.startsWith('element')
+    return path?.startsWith('element')
   }
 
   #isFunction(val: any) {
@@ -346,16 +426,25 @@ export class Receiver {
   }
 
   async #fetch(id: string, url: string, options: any) {
+    const type = 'response'
     try {
       const response = await fetch(url, options)
       if (response.ok) {
         const data = await response.text()
-        this.#port?.postMessage({ id, data: (data + '').trim() })
+        if (this.#dispatcher instanceof Window) {
+          this.#dispatcher?.postMessage({ id, type, data: (data + '').trim() }, '*')
+        } else {
+          this.#dispatcher?.postMessage({ id, type, data: (data + '').trim() })
+        }
         return { data }
       }
       return { error: response.statusText }
     } catch (e: any) {
-      this.#port?.postMessage({ id, data: { error: e.message } })
+      if (this.#dispatcher instanceof Window) {
+        this.#dispatcher?.postMessage({ id, type: 'response', data: { error: e.message } }, '*')
+      } else {
+        this.#dispatcher?.postMessage({ id, type: 'response', data: { error: e.message } })
+      }
       return { error: e.message }
     }
   }

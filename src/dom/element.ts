@@ -1,38 +1,38 @@
 import { query } from './query'
 
 export interface IDocumentElement {
-  add: (selector: string, html: string, position: InsertPosition) => void
-  addToAll: (selector: string, html: string, position: InsertPosition) => void
-  get: (selector: string) => string
-  getAll(selector: string): string[]
-  exists: (selector: string) => boolean
-  remove: (selector: string) => void
-  removeAll: (selector: string) => void
-  replace: (selector: string, html: string) => void
-  replaceAll: (selector: string, html: string) => void
-  addStyles: (selector: string, styles: string) => void
-  addStylesToAll: (selector: string, styles: string) => void
-  restoreStyles: (selector: string) => void
+  add: (opts: { selector: string; html: string; position?: InsertPosition }) => void
+  addToAll: (opts: { selector: string; html: string; position?: InsertPosition }) => void
+  get: (opts: { selector: string }) => string
+  getAll(opts: { selector: string }): string[]
+  exists: (opts: { selector: string }) => boolean
+  remove: (opts: { selector: string }) => void
+  removeAll: (opts: { selector: string }) => void
+  replace: (opts: { selector: string; html: string }) => void
+  replaceAll: (opts: { selector: string; html: string }) => void
+  addStyles: (opts: { selector: string; styles: string }) => void
+  addStylesToAll: (opts: { selector: string; styles: string }) => void
+  restoreStyles: (opts: { selector: string }) => void
   restoreStylesToAll: () => void
 }
 
 export class DocumentElement implements IDocumentElement {
-  add(selector: string, html: string, position: InsertPosition): void {
-    const element = document.querySelector(selector)
+  add(opts: { selector: string; html: string; position?: InsertPosition }): void {
+    const element = document.querySelector(opts.selector)
     if (element) {
-      element.insertAdjacentHTML(position, html)
+      element.insertAdjacentHTML(opts.position || 'beforeend', opts.html)
     }
   }
 
-  addToAll(selector: string, html: string, position: InsertPosition): void {
-    const elements = document.querySelectorAll(selector)
+  addToAll(opts: { selector: string; html: string; position?: InsertPosition }): void {
+    const elements = document.querySelectorAll(opts.selector)
     elements.forEach(element => {
-      element.insertAdjacentHTML(position, html)
+      element.insertAdjacentHTML(opts.position || 'beforeend', opts.html)
     })
   }
 
-  get(selector: string, deep = false): string {
-    const element = query(window, selector, deep)
+  get(opts: { selector: string; deep?: boolean }): string {
+    const element = query(window, opts.selector, opts.deep || false)
     if (element) {
       return element.outerHTML
     }
@@ -42,8 +42,8 @@ export class DocumentElement implements IDocumentElement {
     return ''
   }
 
-  getAll(selector: string): string[] {
-    const elements = document.querySelectorAll(selector)
+  getAll(opts: { selector: string }): string[] {
+    const elements = document.querySelectorAll(opts.selector)
     const htmls: string[] = []
     elements.forEach(element => {
       htmls.push(element.outerHTML)
@@ -51,47 +51,60 @@ export class DocumentElement implements IDocumentElement {
     return htmls
   }
 
-  exists(selector: string | string[], deep = false): boolean {
-    const selectors = Array.isArray(selector) ? selector : [selector]
-    return selectors.some(s => !!query(window, s), deep)
+  exists(opts: { selector: string; deep?: boolean }): boolean {
+    return !!query(window, opts.selector, opts.deep || false)
   }
 
-  remove(selector: string): void {
-    const element = document.querySelector(selector)
+  remove(opts: { selector: string }): void {
+    const element = document.querySelector(opts.selector)
     if (element) {
       element.remove()
     }
   }
 
-  removeAll(selector: string): void {
-    const elements = document.querySelectorAll(selector)
+  removeAll(opts: { selector: string }): void {
+    const elements = document.querySelectorAll(opts.selector)
     elements.forEach(element => {
       element.remove()
     })
   }
 
-  replace(selector: string, html: string): void {
-    const element = document.querySelector(selector)
+  replace(opts: { selector: string; html: string }): void {
+    const element = document.querySelector(opts.selector)
     if (element) {
-      element.innerHTML = html
+      element.innerHTML = opts.html || ''
     }
   }
 
-  replaceAll(selector: string, html: string): void {
-    const elements = document.querySelectorAll(selector)
+  replaceAll(opts: { selector: string; html: string }): void {
+    const elements = document.querySelectorAll(opts.selector)
     elements.forEach(element => {
-      element.innerHTML = html
+      element.innerHTML = opts.html || ''
     })
   }
 
-  addStyles(selector: string, styles: string | { [key: string]: string }): void {
+  addClasses(opts: { selector: string; classes: string | string[] }): void {
+    const element = document.querySelector(opts.selector) as HTMLElement
+    if (element) {
+      element.classList.add(...(typeof opts.classes === 'string' ? opts.classes.split(' ') : opts.classes))
+    }
+  }
+
+  addClassesToAll(opts: { selector: string; classes: string | string[] }): void {
+    const elements = document.querySelectorAll(opts.selector) as NodeListOf<HTMLElement>
+    elements.forEach(element => {
+      element.classList.add(...(typeof opts.classes === 'string' ? opts.classes.split(' ') : opts.classes))
+    })
+  }
+
+  addStyles(opts: { selector: string; styles: string | { [key: string]: string } }): void {
     try {
-      const element = document.querySelector(selector) as HTMLElement
+      const element = document.querySelector(opts.selector) as HTMLElement
       if (element) {
         // restore styles
         element.setAttribute('style', element.getAttribute('data-restore-styles') || '')
         // convert styles to object
-        const styleObj = typeof styles === 'string' ? JSON.parse(styles) : styles
+        const styleObj = typeof opts.styles === 'string' ? JSON.parse(opts.styles) : opts.styles
         // set original styles to data-restore-styles attribute
         element.setAttribute('data-restore-styles', element.getAttribute('style') || '')
         // set new styles
@@ -104,14 +117,14 @@ export class DocumentElement implements IDocumentElement {
     }
   }
 
-  addStylesToAll(selector: string, styles: string | { [key: string]: string }): void {
-    const elements = document.querySelectorAll(selector) as NodeListOf<HTMLElement>
+  addStylesToAll(opts: { selector: string; styles: string | { [key: string]: string } }): void {
+    const elements = document.querySelectorAll(opts.selector) as NodeListOf<HTMLElement>
     elements.forEach(element => {
       try {
         // restore styles
         element.setAttribute('style', element.getAttribute('data-restore-styles') || '')
         // convert styles to object
-        const styleObj = typeof styles === 'string' ? JSON.parse(styles) : styles
+        const styleObj = typeof opts.styles === 'string' ? JSON.parse(opts.styles) : opts.styles
         // set original styles to data-restore-styles attribute
         element.setAttribute('data-restore-styles', element.getAttribute('style') || '')
         // set new styles
@@ -122,8 +135,8 @@ export class DocumentElement implements IDocumentElement {
     })
   }
 
-  restoreStyles(selector: string): void {
-    const element = document.querySelector(selector) as HTMLElement
+  restoreStyles(opts: { selector: string }): void {
+    const element = document.querySelector(opts.selector) as HTMLElement
     if (element) {
       // check if data-restore-styles attribute exists
       if (!element.hasAttribute('data-restore-styles')) return
@@ -139,15 +152,17 @@ export class DocumentElement implements IDocumentElement {
     })
   }
 
-  removeClasses(selector: string, classes: string): void {
-    const element = document.querySelector(selector) as HTMLElement
+  removeClasses(opts: { selector: string; classes: string }): void {
+    const classes = opts.classes + ''
+    const element = document.querySelector(opts.selector) as HTMLElement
     if (element) {
       element.classList.remove(...classes.split(' '))
     }
   }
 
-  removeClassesToAll(selector: string, classes: string): void {
-    const elements = document.querySelectorAll(selector) as NodeListOf<HTMLElement>
+  removeClassesToAll(opts: { selector: string; classes: string }): void {
+    const classes = opts.classes + ''
+    const elements = document.querySelectorAll(opts.selector) as NodeListOf<HTMLElement>
     elements.forEach(element => {
       element.classList.remove(...classes.split(' '))
     })

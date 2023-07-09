@@ -19,6 +19,7 @@
     }
   },
   "scripts": {
+    "dev": "vite",
     "build": "tsc && vite build",
     "build:d": "tsc src/*.ts --declaration --emitDeclarationOnly --declarationDir dist/",
     "docs": "typedoc --options typedoc.cjs src/index.ts",

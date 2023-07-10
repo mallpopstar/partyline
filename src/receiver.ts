@@ -16,8 +16,8 @@ declare const cookieStore: any
 export class Receiver {
   id = createUniqueId()
 
-  // customPaths for overriding default paths
-  #customPaths: Map<string, (...args: any[]) => any> = new Map()
+  // custom requests for overriding default paths
+  #customRequests: Map<string, (...args: any[]) => any> = new Map()
   // cookie is used as paths on execOn
   #cookie = new Cookie()
   // session is used as paths on execOn
@@ -44,20 +44,20 @@ export class Receiver {
    * @param onDisconnect
    */
   connect(dispatcher: Window | Worker | MessagePort | BroadcastChannel, onDisconnect?: () => void) {
-    if (dispatcher instanceof Window) {
+    if (dispatcher instanceof Window || dispatcher instanceof BroadcastChannel) {
       dispatcher.addEventListener('message', (event: any) => {
         if (event.data.batch) {
-          return event.data.batch.forEach((payload: any) => this.#postMessage(payload))
+          return event.data.batch.forEach((payload: any) => this.#requestHandler(payload))
         }
-        this.#postMessage(event.data)
+        this.#requestHandler(event.data)
       })
       this.#onDisconnect = onDisconnect
-    } else if ('postMessage' in dispatcher) {
+    } else {
       dispatcher.onmessage = async (event: any) => {
         if (event.data.batch) {
-          return event.data.batch.forEach((payload: any) => this.#postMessage(payload))
+          return event.data.batch.forEach((payload: any) => this.#requestHandler(payload))
         }
-        this.#postMessage(event.data)
+        this.#requestHandler(event.data)
       }
       this.#onDisconnect = onDisconnect
     }
@@ -82,11 +82,11 @@ export class Receiver {
   /**
    * Register a custom path or override a default path
    *
-   * @param path
+   * @param event
    * @param callback
    */
-  registerPath(path: string, callback: (requestId: string, ...args: any[]) => any) {
-    this.#customPaths.set(path, callback)
+  onRequest(event: string, callback: (requestId: string, ...args: any[]) => any) {
+    this.#customRequests.set(event, callback)
   }
 
   /**
@@ -99,43 +99,47 @@ export class Receiver {
   }
 
   #execOn(id: string, selector: string, path: string) {
-    selector = selector + '' === '*' ? '' : selector + ''
-    switch (path) {
-      case ELEMENT.ON_CLICK:
-      case ELEMENT.ON_MOUSEDOWN:
-      case ELEMENT.ON_MOUSEUP:
-      case ELEMENT.ON_HOVER:
-        return this.#on.pointerEvent(id, selector, path)
-      case ELEMENT.ON_TOGGLE:
-        return this.#on.toggleShowHide(id, selector)
-      case ELEMENT.ON_MUTATION:
-        return this.#on.mutation(id, selector)
-      case INPUT.ON_INPUT:
-      case INPUT.ON_CHANGE:
-      case INPUT.ON_FOCUS:
-      case INPUT.ON_BLUR:
-        return this.#on.inputEvent(id, selector, path)
-      case FORM.ON_SUBMIT:
-        return this.#on.submit(id, selector)
-      case WINDOW.ON_URL_CHANGE:
-        return this.#on.urlChange(id, selector, path)
-      case NETWORK.ON_FETCH:
-        return this.#on.fetch(id, selector)
-      case NETWORK.ON_HTTP:
-        return this.#on.httpRequest(id, selector)
-      case CONNECTION.ON_DISCONNECT:
-        return this.#on.disconnect(id)
-      case STORE.ON_COOKIE_CHANGE:
-        return this.#on.cookieChange(id, selector, path)
-      case STORE.ON_SESSION_STORAGE_CHANGE:
-        return this.#on.sessionStorageChange(id, selector, path)
-      case STORE.ON_COOKIE_STORE_CHANGE:
-        return this.#on.cookieStorageChange(id, selector, path)
-      case STORE.ON_LOCAL_STORAGE_CHANGE:
-        return this.#on.localStorageChange(id, selector, path)
-      default:
-        console.log('path not found', path)
-        return () => {}
+    try {
+      selector = selector + '' === '*' ? '' : selector + ''
+      switch (path) {
+        case ELEMENT.ON_CLICK:
+        case ELEMENT.ON_MOUSEDOWN:
+        case ELEMENT.ON_MOUSEUP:
+        case ELEMENT.ON_HOVER:
+          return this.#on.pointerEvent(id, selector, path)
+        case ELEMENT.ON_TOGGLE:
+          return this.#on.toggleShowHide(id, selector)
+        case ELEMENT.ON_MUTATION:
+          return this.#on.mutation(id, selector)
+        case INPUT.ON_INPUT:
+        case INPUT.ON_CHANGE:
+        case INPUT.ON_FOCUS:
+        case INPUT.ON_BLUR:
+          return this.#on.inputEvent(id, selector, path)
+        case FORM.ON_SUBMIT:
+          return this.#on.submit(id, selector)
+        case WINDOW.ON_URL_CHANGE:
+          return this.#on.urlChange(id, selector, path)
+        case NETWORK.ON_FETCH:
+          return this.#on.fetch(id, selector)
+        case NETWORK.ON_HTTP:
+          return this.#on.httpRequest(id, selector)
+        case CONNECTION.ON_DISCONNECT:
+          return this.#on.disconnect(id)
+        case STORE.ON_COOKIE_CHANGE:
+          return this.#on.cookieChange(id, selector, path)
+        case STORE.ON_SESSION_STORAGE_CHANGE:
+          return this.#on.sessionStorageChange(id, selector, path)
+        case STORE.ON_COOKIE_STORE_CHANGE:
+          return this.#on.cookieStorageChange(id, selector, path)
+        case STORE.ON_LOCAL_STORAGE_CHANGE:
+          return this.#on.localStorageChange(id, selector, path)
+        default:
+          console.log('path not found', path)
+          return () => {}
+      }
+    } catch (e) {
+      console.warn(e)
     }
   }
 
@@ -228,22 +232,19 @@ export class Receiver {
     }
   }
 
-  async #postMessage(data: { id: string; type: string; path: string; args: any[] }) {
+  async #requestHandler(message: { id: string; type: string; path: string; args: any[] }) {
     try {
-      const { id, type, path, args } = data
-      if(!id || !type || !path) return
+      const { id, type, path, args } = message
+      if (!id || !type || !path) return
       // log the message
-      this.#logger?.(data)
+      this.#logger?.(message)
       // check if the path is a custom path
-      if (this.#customPaths.has(path)) {
-        let value = this.#customPaths.get(path)?.(id, ...args)
+      if (this.#customRequests.has(path)) {
+        let value = this.#customRequests.get(path)?.(id, ...args)
         if (this.#isPromise(value)) {
           value = await value
         }
-        if (this.#dispatcher instanceof Window) {
-          return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
-        }
-        return this.#dispatcher?.postMessage({ id, type, data: value })
+        return this.#postMessage({ id, data: value })
       }
 
       if (this.#isFetch(path)) {
@@ -271,10 +272,7 @@ export class Receiver {
           if (this.#isPromise(value)) {
             value = await value
           }
-          if (this.#dispatcher instanceof Window) {
-            return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
-          }
-          return this.#dispatcher?.postMessage({ id, type, data: value })
+          return this.#postMessage({ id, data: value })
         }
       }
 
@@ -286,10 +284,7 @@ export class Receiver {
           if (this.#isPromise(value)) {
             value = await value
           }
-          if (this.#dispatcher instanceof Window) {
-            return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
-          }
-          return this.#dispatcher?.postMessage({ id, type, data: value })
+          return this.#postMessage({ id, data: value })
         }
       }
 
@@ -301,10 +296,7 @@ export class Receiver {
           if (this.#isPromise(value)) {
             value = await value
           }
-          if (this.#dispatcher instanceof Window) {
-            return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
-          }
-          return this.#dispatcher?.postMessage({ id, type, data: value })
+          return this.#postMessage({ id, data: value })
         }
       }
 
@@ -316,17 +308,14 @@ export class Receiver {
           if (this.#isPromise(value)) {
             value = await value
           }
-          if (this.#dispatcher instanceof Window) {
-            return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
-          }
-          return this.#dispatcher?.postMessage({ id, type, data: value })
+          return this.#postMessage({ id, data: value })
         }
       }
 
       if (this.#isElement(path)) {
         const opts = args[0]
         let value = this.#execDom(path, opts)
-        return this.#dispatcher?.postMessage({ id, type, data: value })
+        return this.#postMessage({ id, data: value })
       }
       let value = getValue(path)
       if (this.#isFunction(value)) {
@@ -345,17 +334,9 @@ export class Receiver {
         value = undefined
       }
 
-      if (this.#dispatcher instanceof Window) {
-        return this.#dispatcher?.postMessage({ id, type, data: value }, '*')
-      }
-      this.#dispatcher?.postMessage({ id: data.id, type, data: value })
+      this.#postMessage({ id, data: value })
     } catch (e: any) {
-      const type = 'response'
-      if (this.#dispatcher instanceof Window) {
-        this.#dispatcher?.postMessage({ id: data.id, type, error: e.message }, '*')
-      } else {
-        this.#dispatcher?.postMessage({ id: data.id, type, error: e.message })
-      }
+      this.#postMessage({ id: message.id, data: { error: e.message } })
     }
   }
 
@@ -426,26 +407,27 @@ export class Receiver {
   }
 
   async #fetch(id: string, url: string, options: any) {
-    const type = 'response'
     try {
       const response = await fetch(url, options)
       if (response.ok) {
         const data = await response.text()
-        if (this.#dispatcher instanceof Window) {
-          this.#dispatcher?.postMessage({ id, type, data: (data + '').trim() }, '*')
-        } else {
-          this.#dispatcher?.postMessage({ id, type, data: (data + '').trim() })
-        }
+        this.#postMessage({ id, data: (data + '').trim() })
         return { data }
       }
       return { error: response.statusText }
     } catch (e: any) {
-      if (this.#dispatcher instanceof Window) {
-        this.#dispatcher?.postMessage({ id, type: 'response', data: { error: e.message } }, '*')
-      } else {
-        this.#dispatcher?.postMessage({ id, type: 'response', data: { error: e.message } })
-      }
+      this.#postMessage({ id, data: { error: e.message } })
       return { error: e.message }
+    }
+  }
+
+  #postMessage(message: { id: string; data: any }) {
+    try {
+      const origin = this.#dispatcher instanceof Window ? '*' : undefined
+      const msg = { ...message, type: 'response' }
+      this.#dispatcher?.postMessage(msg, origin as any)
+    } catch (e) {
+      console.warn(e)
     }
   }
 }

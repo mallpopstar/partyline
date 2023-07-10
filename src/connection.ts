@@ -1,25 +1,21 @@
 const PORT_CONNECTION = 'port.connection'
 
-export const connect = (target: any, port: MessagePort) => {
+export const sendMessagePort = (target: any, port: MessagePort) => {
   try {
     if (target instanceof Worker) {
-      target.postMessage({ type: PORT_CONNECTION }, [port])
-      return
+      return target.postMessage({ type: PORT_CONNECTION }, [port])
     }
 
     if (target instanceof Window) {
-      target.postMessage({ type: PORT_CONNECTION }, '*', [port])
-      return
+      return target.postMessage({ type: PORT_CONNECTION }, '*', [port])
     }
 
     if ('postMessage' in target) {
-      target.postMessage({ type: PORT_CONNECTION }, '*', [port])
-      return
+      return target.postMessage({ type: PORT_CONNECTION }, '*', [port])
     }
 
     if ('connect' in target) {
-      target.connect(port)
-      return
+      return target.connect(port)
     }
   } catch (e) {
     console.error(e)
@@ -27,10 +23,9 @@ export const connect = (target: any, port: MessagePort) => {
   return new Promise(resolve => setTimeout(resolve, 0))
 }
 
-export const onConnection = (target: Window, handler: (port: MessagePort) => void) => {
+export const onMessagePort = (target: Window, handler: (port: MessagePort) => void) => {
   const messageHandler = (event: MessageEvent) => {
     const { data, ports } = event
-    debugger
     if (ports && ports.length > 0) {
       target.removeEventListener('message', messageHandler)
       if (data.type === PORT_CONNECTION) {
@@ -43,4 +38,3 @@ export const onConnection = (target: Window, handler: (port: MessagePort) => voi
   }
   target.addEventListener('message', messageHandler)
 }
-

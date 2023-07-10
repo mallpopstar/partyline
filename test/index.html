@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script module src="/dist/partyline.iife.js"></script>
+  </head>
+  <body>
+    <script>
+      const messageChannel = new MessageChannel()
+      const receiver = new partyline.Receiver()
+      receiver.connect(messageChannel.port1)
+
+      const sender = new partyline.Sender()
+      sender.connect(messageChannel.port2)
+      sender.element.add({
+        selector: 'body',
+        html: '<div id="hi">Hello World</div>',
+      })
+      sender.element.onClick('#hi', () => {
+        console.log('clicked')
+      })
+      // sender.element.onClick({
+      //   selector: '#hi',
+      //   callback: () => {
+      //     console.log('clicked')
+      //   },
+      // })
+    </script>
+  </body>
+</html>

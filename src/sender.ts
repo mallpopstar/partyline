@@ -306,6 +306,14 @@ export class Sender implements ISender {
     this.page = new Page(this)
   }
 
+  // #postMessage(message: { id: string; path: string; data: any }) {
+  //   if (this.dispatcher instanceof Window) {
+  //     this.dispatcher.postMessage({ id, path: 'off.' + event, args: [target] }, '*')
+  //   } else {
+  //     this.dispatcher?.postMessage({ id, path: 'off.' + event, args: [target] })
+  //   }
+  // }
+
   /** @private */
   preparePayload(data: any) {
     return JSON.parse(JSON.stringify(data))
@@ -339,7 +347,6 @@ export class Sender implements ISender {
       this.batchMessages.length = 0
       return
     }
-
     this.batchTimer = setTimeout(() => {
       try {
         if (this.dispatcher instanceof Window) {
@@ -375,21 +382,17 @@ export class Sender implements ISender {
       setTimeout(() => {
         if (this.dispatcher instanceof Window) {
           this.dispatcher.postMessage({ id, path: 'off.' + event, args: [target] }, '*')
-        } else if (
-          this.dispatcher instanceof Worker ||
-          this.dispatcher instanceof MessagePort ||
-          this.dispatcher instanceof BroadcastChannel
-        ) {
-          this.dispatcher.postMessage({ id, path: 'off.' + event, args: [target] })
+        } else {
+          this.dispatcher?.postMessage({ id, path: 'off.' + event, args: [target] })
         }
       }, 0)
     }
   }
 
   connect(dispatcher: Window | Worker | MessagePort | BroadcastChannel) {
-    if (dispatcher instanceof Window) {
+    if (dispatcher instanceof Window || dispatcher instanceof BroadcastChannel) {
       dispatcher.addEventListener('message', (e: any) => {
-        const { id, type, data, error } = e.data
+        const { id, data, error } = e.data
         const promise = this.promises.get(id)
         if (promise) {
           promise.timer && clearTimeout(promise.timer)
@@ -407,7 +410,7 @@ export class Sender implements ISender {
         }
       })
       this.dispatcher = dispatcher as any
-    } else if ('onmessage' in dispatcher) {
+    } else {
       dispatcher.onmessage = e => {
         const { id, data, error } = e.data
         const promise = this.promises.get(id)

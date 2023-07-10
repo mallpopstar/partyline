@@ -4,8 +4,6 @@ let initialized = false
 const emitter = mitt()
 
 export const onFetch = (callback: (response: any) => void) => {
-  emitter.on('change', callback)
-
   if (!initialized) {
     initialized = true
 
@@ -25,7 +23,7 @@ export const onFetch = (callback: (response: any) => void) => {
         if (clonedResponse.ok) {
           setTimeout(async () => {
             try {
-              const data = await clonedResponse.json()
+              const data = await clonedResponse.text()
               emitter.emit('change', { url: clonedResponse.url, data })
             } catch (e) {
               console.log('Error parsing response', e)
@@ -36,15 +34,9 @@ export const onFetch = (callback: (response: any) => void) => {
         return response
       })
     }
-
-    return () => {
-      // SHOULD WE REPLACE THE ORIGINAL FETCH?
-      // window.fetch = originalFetch
-      emitter.off('change', callback)
-    }
   }
-
+  emitter.on('change', callback)
   return () => {
-    emitter.all.clear()
+    emitter.off('change', callback)
   }
 }

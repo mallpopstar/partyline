@@ -14,7 +14,7 @@ export const ELEMENT = {
   QUERY: ELEMENT_NS + '.query',
 
   // Events
-  ON_TOGGLE: ELEMENT_NS + '.onToggle',
+  ON_EXISTS: ELEMENT_NS + '.onExists',
   ON_MUTATION: ELEMENT_NS + '.onMutation',
   ON_CLICK: ELEMENT_NS + '.onClick',
   ON_MOUSE_OVER: ELEMENT_NS + '.onMouseOver',

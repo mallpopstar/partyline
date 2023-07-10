@@ -98,44 +98,44 @@ export class Receiver {
     this.#logger = logger
   }
 
-  #execOn(id: string, selector: string, path: string) {
+  #execOn(id: string, filter: string, event: string) {
     try {
-      selector = selector + '' === '*' ? '' : selector + ''
-      switch (path) {
+      filter = filter + '' === '*' ? '' : filter + ''
+      switch (event) {
         case ELEMENT.ON_CLICK:
         case ELEMENT.ON_MOUSEDOWN:
         case ELEMENT.ON_MOUSEUP:
         case ELEMENT.ON_HOVER:
-          return this.#on.pointerEvent(id, selector, path)
-        case ELEMENT.ON_TOGGLE:
-          return this.#on.toggleShowHide(id, selector)
+          return this.#on.pointerEvent(id, filter, event)
+        case ELEMENT.ON_EXISTS:
+          return this.#on.presentChange(id, filter)
         case ELEMENT.ON_MUTATION:
-          return this.#on.mutation(id, selector)
+          return this.#on.mutation(id, filter)
         case INPUT.ON_INPUT:
         case INPUT.ON_CHANGE:
         case INPUT.ON_FOCUS:
         case INPUT.ON_BLUR:
-          return this.#on.inputEvent(id, selector, path)
+          return this.#on.inputEvent(id, filter, event)
         case FORM.ON_SUBMIT:
-          return this.#on.submit(id, selector)
+          return this.#on.submit(id, filter)
         case WINDOW.ON_URL_CHANGE:
-          return this.#on.urlChange(id, selector, path)
+          return this.#on.urlChange(id, filter, event)
         case NETWORK.ON_FETCH:
-          return this.#on.fetch(id, selector)
+          return this.#on.fetch(id, filter)
         case NETWORK.ON_HTTP:
-          return this.#on.httpRequest(id, selector)
+          return this.#on.httpRequest(id, filter)
         case CONNECTION.ON_DISCONNECT:
           return this.#on.disconnect(id)
         case STORE.ON_COOKIE_CHANGE:
-          return this.#on.cookieChange(id, selector, path)
+          return this.#on.cookieChange(id, filter)
         case STORE.ON_SESSION_STORAGE_CHANGE:
-          return this.#on.sessionStorageChange(id, selector, path)
+          return this.#on.sessionStorageChange(id, filter)
         case STORE.ON_COOKIE_STORE_CHANGE:
-          return this.#on.cookieStorageChange(id, selector, path)
+          return this.#on.cookieStorageChange(id, filter)
         case STORE.ON_LOCAL_STORAGE_CHANGE:
-          return this.#on.localStorageChange(id, selector, path)
+          return this.#on.localStorageChange(id, filter)
         default:
-          console.log('path not found', path)
+          console.warn('event not found', event)
           return () => {}
       }
     } catch (e) {

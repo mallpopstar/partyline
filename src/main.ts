@@ -41,6 +41,35 @@ async function main() {
   } else if (dispatchType === 'broadcast') {
     s.connect(b)
   }
+
+  s.input.onInput('[type="text"]', data => {
+    console.log('input', data)
+  })
+
+  s.form.onSubmit('form', data => {
+    console.log('form submitted', data)
+  })
+
+  s.network.onFetch('', data => {
+    console.log('¡FETCH! handler', data)
+  })
+
+  s.network.onHTTP('', data => {
+    console.log('¡HTTP! handler', data)
+  })
+
+  s.store.onLocalStorageChange('counter', (data: string) => {
+    console.log('local storage change', data)
+  })
+
+  s.element.onMutate('#counter', data => {
+    console.log('mutation', data)
+  })
+
+  s.element.onExists('.myclass', data => {
+    console.log('exists change', data)
+  })
+
   s.page.onUrlChange('', url => {
     console.log('url changed ->', url)
   })
@@ -71,7 +100,7 @@ async function main() {
   })
 
   s.sendRequest('hello', { message: '¡Hola tú!' }).then(response => {
-    console.log('response', response)
+    console.log('custom response', response)
   })
 
   console.log('listening for clicks on ".myclass"')
@@ -81,6 +110,22 @@ async function main() {
       selector: '.myclass',
     })
     offClick()
+  })
+
+  // using the button increment the counter
+  const button = document.getElementById('inc') as HTMLButtonElement
+  const counter = document.getElementById('counter') as HTMLSpanElement
+  let count = 0
+  button.addEventListener('click', () => {
+    count++
+    counter.innerHTML = count + ''
+    localStorage.setItem('counter', count + '')
+  })
+
+  // prevent the form from submitting
+  const form = document.getElementById('form') as HTMLFormElement
+  form.addEventListener('submit', e => {
+    e.preventDefault()
   })
 
   // const w = createWebWorker(() => {
@@ -103,6 +148,22 @@ async function main() {
   //   console.log('worker message', event.data)
   // }
   // w.postMessage('port', [m.port2])
+  // https://catfact.ninja/fact
+  setTimeout(() => {
+    fetch('https://catfact.ninja/fact')
+      .then(response => response.json())
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
+    const xhr = new XMLHttpRequest()
+    xhr.open('GET', 'https://catfact.ninja/fact')
+    xhr.send()
+    // xhr.onreadystatechange = () => {
+    //   if (xhr.readyState === 4 && xhr.status === 200) {
+    //     // 4 = DONE
+    //     console.log('xhr response', xhr.responseText)
+    //   }
+    // }
+  }, 1000)
 }
 
 main()

@@ -34,7 +34,7 @@ export interface IElement {
   onMouseUp: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
   onMouseOver: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
   onMutate: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
-  onToggle: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
+  onExists: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
 }
 
 class Element implements IElement {
@@ -82,32 +82,32 @@ class Element implements IElement {
 
   // event: string, target: string | { [key: string]: string }, callback: ElementCallback
   // event handlers
-  onClick(target: string | { [key: string]: string }, callback: ElementCallback): Function {
-    return this.sender.subscribe(ELEMENT.ON_CLICK, target, callback)
+  onClick(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_CLICK, selector, callback)
   }
 
-  onHover(target: string | { [key: string]: string }, callback: ElementCallback): Function {
-    return this.sender.subscribe(ELEMENT.ON_HOVER, target, callback)
+  onHover(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_HOVER, selector, callback)
   }
 
-  onMouseDown(target: string | { [key: string]: string }, callback: ElementCallback): Function {
-    return this.sender.subscribe(ELEMENT.ON_MOUSEDOWN, target, callback)
+  onMouseDown(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_MOUSEDOWN, selector, callback)
   }
 
-  onMouseUp(target: string | { [key: string]: string }, callback: ElementCallback): Function {
-    return this.sender.subscribe(ELEMENT.ON_MOUSEUP, target, callback)
+  onMouseUp(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_MOUSEUP, selector, callback)
   }
 
-  onMouseOver(target: string | { [key: string]: string }, callback: ElementCallback): Function {
-    return this.sender.subscribe(ELEMENT.ON_MOUSE_OVER, target, callback)
+  onMouseOver(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_MOUSE_OVER, selector, callback)
   }
 
-  onMutate(target: string | { [key: string]: string }, callback: ElementCallback): Function {
-    return this.sender.subscribe(ELEMENT.ON_MUTATION, target, callback)
+  onMutate(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_MUTATION, selector, callback)
   }
 
-  onToggle(target: string | { [key: string]: string }, callback: ElementCallback): Function {
-    return this.sender.subscribe(ELEMENT.ON_TOGGLE, target, callback)
+  onExists(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+    return this.sender.subscribe(ELEMENT.ON_EXISTS, selector, callback)
   }
 }
 
@@ -154,8 +154,8 @@ export interface INetwork {
   fetch: (url: string, options?: any) => Promise<any>
 
   // event handlers
-  onFetch: (target: string | { [key: string]: string }, callback: NetworkCallback) => Function
-  onHTTP: (target: string | { [key: string]: string }, callback: NetworkCallback) => Function
+  onFetch: (match: string | { [key: string]: string }, callback: NetworkCallback) => Function
+  onHTTP: (match: string | { [key: string]: string }, callback: NetworkCallback) => Function
 }
 
 class Network implements INetwork {
@@ -166,12 +166,12 @@ class Network implements INetwork {
   }
 
   // event handlers
-  onFetch(target: string | { [key: string]: string }, callback: NetworkCallback): Function {
-    return this.sender.subscribe(NETWORK.ON_FETCH, target, callback)
+  onFetch(match: string | { [key: string]: string }, callback: NetworkCallback): Function {
+    return this.sender.subscribe(NETWORK.ON_FETCH, match, callback)
   }
 
-  onHTTP(target: string | { [key: string]: string }, callback: NetworkCallback): Function {
-    return this.sender.subscribe(NETWORK.ON_HTTP, target, callback)
+  onHTTP(match: string | { [key: string]: string }, callback: NetworkCallback): Function {
+    return this.sender.subscribe(NETWORK.ON_HTTP, match, callback)
   }
 }
 
@@ -186,10 +186,10 @@ export interface IStore {
   setLocalStorageItem: (name: string, value: any) => Promise<any>
   setSessionStorageItem: (name: string, value: any) => Promise<any>
 
-  onCookieChange: (callback: StoreCallback) => Function
-  onCookieStoreChange: (callback: StoreCallback) => Function
-  onLocalStorageChange: (callback: StoreCallback) => Function
-  onSessionStorageChange: (callback: StoreCallback) => Function
+  onCookieChange: (key: string, callback: StoreCallback) => Function
+  onCookieStoreChange: (key: string, callback: StoreCallback) => Function
+  onLocalStorageChange: (key: string, callback: StoreCallback) => Function
+  onSessionStorageChange: (key: string, callback: StoreCallback) => Function
 }
 
 class StoreSender implements IStore {
@@ -227,20 +227,20 @@ class StoreSender implements IStore {
     return await this.sender.sendRequest(STORE.SET_SESSION_STORAGE_ITEM, name, value)
   }
 
-  onCookieChange(callback: StoreCallback): Function {
-    return this.sender.subscribe(STORE.ON_COOKIE_CHANGE, '', callback)
+  onCookieChange(key: string, callback: StoreCallback): Function {
+    return this.sender.subscribe(STORE.ON_COOKIE_CHANGE, key, callback)
   }
 
-  onCookieStoreChange(callback: StoreCallback): Function {
-    return this.sender.subscribe(STORE.ON_COOKIE_STORE_CHANGE, '', callback)
+  onCookieStoreChange(key: string, callback: StoreCallback): Function {
+    return this.sender.subscribe(STORE.ON_COOKIE_STORE_CHANGE, key, callback)
   }
 
-  onLocalStorageChange(callback: StoreCallback): Function {
-    return this.sender.subscribe(STORE.ON_LOCAL_STORAGE_CHANGE, '', callback)
+  onLocalStorageChange(key: string, callback: StoreCallback): Function {
+    return this.sender.subscribe(STORE.ON_LOCAL_STORAGE_CHANGE, key, callback)
   }
 
-  onSessionStorageChange(callback: StoreCallback): Function {
-    return this.sender.subscribe(STORE.ON_SESSION_STORAGE_CHANGE, '', callback)
+  onSessionStorageChange(key: string, callback: StoreCallback): Function {
+    return this.sender.subscribe(STORE.ON_SESSION_STORAGE_CHANGE, key, callback)
   }
 }
 

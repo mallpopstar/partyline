@@ -85,7 +85,7 @@ export class Receiver {
    * @param event
    * @param callback
    */
-  onRequest(event: string, callback: (requestId: string, ...args: any[]) => any) {
+  on(event: string, callback: (requestId: string, ...args: any[]) => any) {
     this.#customRequests.set(event, callback)
   }
 

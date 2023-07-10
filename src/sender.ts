@@ -41,43 +41,43 @@ class Element implements IElement {
   constructor(private sender: ISender) {}
 
   async addStyles(opts: { selector: string; styles: string | { [key: string]: string }; applyToAll?: boolean }) {
-    return await this.sender.sendRequest(ELEMENT.ADD_STYLES, opts)
+    return await this.sender.send(ELEMENT.ADD_STYLES, opts)
   }
 
   async restoreStyles(opts?: { selector: string; applyToAll?: boolean }) {
-    return await this.sender.sendRequest(ELEMENT.RESTORE_STYLES, opts)
+    return await this.sender.send(ELEMENT.RESTORE_STYLES, opts)
   }
 
   async add(opts: { selector: string; html: string; position?: InsertPosition; applyToAll?: boolean }) {
-    return await this.sender.sendRequest(ELEMENT.ADD, opts)
+    return await this.sender.send(ELEMENT.ADD, opts)
   }
 
   async exists(opts: { selector: string }) {
-    return await this.sender.sendRequest(ELEMENT.EXISTS, opts)
+    return await this.sender.send(ELEMENT.EXISTS, opts)
   }
 
   async find(opts: { selector: string }) {
-    return await this.sender.sendRequest(ELEMENT.FIND, opts)
+    return await this.sender.send(ELEMENT.FIND, opts)
   }
 
   async remove(opts: { selector: string }) {
-    return await this.sender.sendRequest(ELEMENT.REMOVE, opts)
+    return await this.sender.send(ELEMENT.REMOVE, opts)
   }
 
   async addClasses(opts: { selector: string; classes: string[]; applyToAll?: boolean }) {
-    return await this.sender.sendRequest(ELEMENT.ADD_CLASSES, opts)
+    return await this.sender.send(ELEMENT.ADD_CLASSES, opts)
   }
 
   async removeClasses(opts: { selector: string; classes: string[]; applyToAll?: boolean }) {
-    return await this.sender.sendRequest(ELEMENT.REMOVE_CLASSES, opts)
+    return await this.sender.send(ELEMENT.REMOVE_CLASSES, opts)
   }
 
   async replace(opts: { selector: string; html: string; applyToAll?: boolean }) {
-    return await this.sender.sendRequest(ELEMENT.REPLACE, opts)
+    return await this.sender.send(ELEMENT.REPLACE, opts)
   }
 
   async query(opts: { queryPath: string }) {
-    return await this.sender.sendRequest(ELEMENT.QUERY, opts)
+    return await this.sender.send(ELEMENT.QUERY, opts)
   }
 
   // event: string, target: string | { [key: string]: string }, callback: ElementCallback
@@ -162,7 +162,7 @@ class Network implements INetwork {
   constructor(private sender: ISender) {}
 
   async fetch(url: string, options?: any) {
-    return await this.sender.sendRequest(NETWORK.FETCH, url, options)
+    return await this.sender.send(NETWORK.FETCH, url, options)
   }
 
   // event handlers
@@ -196,35 +196,35 @@ class StoreSender implements IStore {
   constructor(private sender: ISender) {}
 
   async getCookie(name: string) {
-    return await this.sender.sendRequest(STORE.GET_COOKIE, name)
+    return await this.sender.send(STORE.GET_COOKIE, name)
   }
 
   async getCookieStoreItem(name: string) {
-    return await this.sender.sendRequest(STORE.GET_COOKIE_STORE_ITEM, name)
+    return await this.sender.send(STORE.GET_COOKIE_STORE_ITEM, name)
   }
 
   async getLocalStorageItem(name: string) {
-    return await this.sender.sendRequest(STORE.GET_LOCAL_STORAGE_ITEM, name)
+    return await this.sender.send(STORE.GET_LOCAL_STORAGE_ITEM, name)
   }
 
   async getSessionStorageItem(name: string) {
-    return await this.sender.sendRequest(STORE.GET_SESSION_STORAGE_ITEM, name)
+    return await this.sender.send(STORE.GET_SESSION_STORAGE_ITEM, name)
   }
 
   async setCookie(name: string, value: any, options?: any) {
-    return await this.sender.sendRequest(STORE.SET_COOKIE, name, value, options)
+    return await this.sender.send(STORE.SET_COOKIE, name, value, options)
   }
 
   async setCookieStoreItem(name: string, value: any, options?: any) {
-    return await this.sender.sendRequest(STORE.SET_COOKIE_STORE_ITEM, name, value, options)
+    return await this.sender.send(STORE.SET_COOKIE_STORE_ITEM, name, value, options)
   }
 
   async setLocalStorageItem(name: string, value: any) {
-    return await this.sender.sendRequest(STORE.SET_LOCAL_STORAGE_ITEM, name, value)
+    return await this.sender.send(STORE.SET_LOCAL_STORAGE_ITEM, name, value)
   }
 
   async setSessionStorageItem(name: string, value: any) {
-    return await this.sender.sendRequest(STORE.SET_SESSION_STORAGE_ITEM, name, value)
+    return await this.sender.send(STORE.SET_SESSION_STORAGE_ITEM, name, value)
   }
 
   onCookieChange(key: string, callback: StoreCallback): Function {
@@ -255,7 +255,7 @@ class Page implements IPage {
   constructor(private sender: ISender) {}
 
   async getUrl() {
-    return await this.sender.sendRequest(WINDOW.GET_URL)
+    return await this.sender.send(WINDOW.GET_URL)
   }
 
   onUrlChange(filter: string, callback: (url: string) => void) {
@@ -265,7 +265,7 @@ class Page implements IPage {
 
 export interface ISender {
   id: string
-  sendRequest: (path: string, ...args: any[]) => Promise<any>
+  send: (path: string, ...args: any[]) => Promise<any>
   subscribe: (event: string, selector: string | { [key: string]: string }, callback: any) => () => void
   connect: (port: MessagePort) => void
   disconnect: () => void
@@ -365,7 +365,7 @@ export class Sender implements ISender {
     }, 1)
   }
 
-  async sendRequest<T = any>(path = '', ...args: any[]) {
+  async send<T = any>(path = '', ...args: any[]) {
     const id = createUniqueId()
     const type = 'request'
     this.batch({ id, type, path, args })

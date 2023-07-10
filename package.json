@@ -1,8 +1,8 @@
 {
   "name": "@totallyradlabs/partyline",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "private": true,
-  "description": "Uses MessageChannel to communicate between windows",
+  "description": "Messenger for communicating between browser windows",
   "type": "module",
   "files": [
     "dist",

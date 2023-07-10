@@ -25,7 +25,7 @@ async function main() {
     r.connect(b)
   }
 
-  r.onRequest('hello', (requestId, message) => {
+  r.on('hello', (requestId, message) => {
     console.log('==>', requestId, message)
     return { message: '¡Hola de vuelta a ti!' }
   })
@@ -99,7 +99,7 @@ async function main() {
     applyToAll: true,
   })
 
-  s.sendRequest('hello', { message: '¡Hola tú!' }).then(response => {
+  s.send('hello', { message: '¡Hola tú!' }).then(response => {
     console.log('custom response', response)
   })
 

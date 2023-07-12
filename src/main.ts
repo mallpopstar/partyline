@@ -12,7 +12,7 @@ import { Sender } from './sender'
 async function main() {
   const dispatchType: 'window' | 'broadcast' | 'message' = 'message'
   const m = new MessageChannel()
-  const b = new BroadcastChannel('test')
+  const b = new BroadcastChannel('example')
   const r = new Receiver()
   // @ts-ignore
   if (dispatchType === 'message') {

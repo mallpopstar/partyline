@@ -1,4 +1,4 @@
-import mitt from '@/helpers/mitt'
+import mitt from '../helpers/mitt'
 const emitter = mitt()
 
 export const onWebSocket = (callback: (response: any) => void) => {

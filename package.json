@@ -1,8 +1,8 @@
 {
-  "name": "@totallyradlabs/partyline",
-  "version": "0.0.1",
+  "name": "@mallpopstar/partyline",
+  "version": "0.0.0",
   "private": true,
-  "description": "Messenger for communicating between browser windows",
+  "description": "Library for communicating between browser windows",
   "type": "module",
   "files": [
     "dist",
@@ -21,18 +21,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:d": "tsc src/*.ts --declaration --emitDeclarationOnly --declarationDir dist/",
-    "docs": "typedoc --options typedoc.cjs src/index.ts",
     "npm:publish": "npm publish --access public",
     "npm:dry-run": "npm publish --dry-run"
   },
   "devDependencies": {
-    "@types/node": "^20.3.3",
-    "typescript": "^4.9.4",
-    "vite": "^4.0.4",
-    "vite-plugin-dts": "^1.7.2"
-  },
-  "dependencies": {
-    "typedoc": "^0.23.28"
+    "@types/node": "^20.4.1",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.3",
+    "vite-plugin-dts": "^3.2.0"
   }
 }

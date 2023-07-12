@@ -87,7 +87,7 @@ export class Observer {
         const data = new FormData(form)
         const entries = data.entries()
         const values: any = {}
-        for (let entry of entries) {
+        for (const entry of entries) {
           values[entry[0]] = entry[1]
         }
         this.#postMessage({ id, data: values })
@@ -105,7 +105,7 @@ export class Observer {
     }
   }
 
-  urlChange(id: string, match: string, path: string) {
+  urlChange(id: string, match: string) {
     try {
       const regex = new RegExp(match)
       const handler = () => {
@@ -211,7 +211,9 @@ export class Observer {
           if (val === oldVal) return
           oldVal = val
           this.#postMessage({ id, data: val })
-        } catch (e) {}
+        } catch (e) {
+          // console.log(match, e)
+        }
       }
 
       this.#handlers.set(id, onInterval(handler))
@@ -232,7 +234,9 @@ export class Observer {
           if (val === oldVal) return
           oldVal = val
           this.#postMessage({ id, data: val })
-        } catch (e) {}
+        } catch (e) {
+          // console.log(match, e)
+        }
       }
 
       this.#handlers.set(id, onInterval(handler))
@@ -246,7 +250,7 @@ export class Observer {
       // watch for text changes in the DOM selction
       if (!match) return
 
-      let cookieStorage = (window as any).cookieStorage
+      const cookieStorage = (window as any).cookieStorage
       let oldVal: string | null = null
       const handler = () => {
         try {
@@ -254,12 +258,14 @@ export class Observer {
           if (val === oldVal) return
           oldVal = val
           this.#postMessage({ id, data: val })
-        } catch (e) {}
+        } catch (e) {
+          // console.log(match, e)
+        }
       }
 
       this.#handlers.set(id, onInterval(handler))
     } catch (e) {
-      console.warn(e)
+      // console.warn(e)
     }
   }
 

@@ -13,6 +13,8 @@ export type FormCallback = (data: { selector: string; value: string }) => void
 export type NetworkCallback = (data: string) => void
 export type StoreCallback = (data: string) => void
 
+type off = () => void
+
 export interface IElement {
   add: (opts: { selector: string; html: string; position?: InsertPosition; applyToAll?: boolean }) => Promise<any>
   exists: (opts: { selector: string }) => Promise<any>
@@ -28,13 +30,13 @@ export interface IElement {
   restoreStyles: (opts?: { selector: string; applyToAll?: boolean }) => Promise<any>
 
   // event handlers
-  onClick: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
-  onHover: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
-  onMouseDown: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
-  onMouseUp: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
-  onMouseOver: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
-  onMutate: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
-  onExists: (target: string | { [key: string]: string }, callback: ElementCallback) => Function
+  onClick: (target: string | { [key: string]: string }, callback: ElementCallback) => off
+  onHover: (target: string | { [key: string]: string }, callback: ElementCallback) => off
+  onMouseDown: (target: string | { [key: string]: string }, callback: ElementCallback) => off
+  onMouseUp: (target: string | { [key: string]: string }, callback: ElementCallback) => off
+  onMouseOver: (target: string | { [key: string]: string }, callback: ElementCallback) => off
+  onMutate: (target: string | { [key: string]: string }, callback: ElementCallback) => off
+  onExists: (target: string | { [key: string]: string }, callback: ElementCallback) => off
 }
 
 class Element implements IElement {
@@ -82,70 +84,70 @@ class Element implements IElement {
 
   // event: string, target: string | { [key: string]: string }, callback: ElementCallback
   // event handlers
-  onClick(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+  onClick(selector: string | { [key: string]: string }, callback: ElementCallback): off {
     return this.sender.subscribe(ELEMENT.ON_CLICK, selector, callback)
   }
 
-  onHover(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+  onHover(selector: string | { [key: string]: string }, callback: ElementCallback): off {
     return this.sender.subscribe(ELEMENT.ON_HOVER, selector, callback)
   }
 
-  onMouseDown(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+  onMouseDown(selector: string | { [key: string]: string }, callback: ElementCallback): off {
     return this.sender.subscribe(ELEMENT.ON_MOUSEDOWN, selector, callback)
   }
 
-  onMouseUp(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+  onMouseUp(selector: string | { [key: string]: string }, callback: ElementCallback): off {
     return this.sender.subscribe(ELEMENT.ON_MOUSEUP, selector, callback)
   }
 
-  onMouseOver(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+  onMouseOver(selector: string | { [key: string]: string }, callback: ElementCallback): off {
     return this.sender.subscribe(ELEMENT.ON_MOUSE_OVER, selector, callback)
   }
 
-  onMutate(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+  onMutate(selector: string | { [key: string]: string }, callback: ElementCallback): off {
     return this.sender.subscribe(ELEMENT.ON_MUTATION, selector, callback)
   }
 
-  onExists(selector: string | { [key: string]: string }, callback: ElementCallback): Function {
+  onExists(selector: string | { [key: string]: string }, callback: ElementCallback): off {
     return this.sender.subscribe(ELEMENT.ON_EXISTS, selector, callback)
   }
 }
 
 export interface IInput {
-  onBlur: (target: string | { [key: string]: string }, callback: InputCallback) => Function
-  onChange: (target: string | { [key: string]: string }, callback: InputCallback) => Function
-  onFocus: (target: string | { [key: string]: string }, callback: InputCallback) => Function
-  onInput: (target: string | { [key: string]: string }, callback: InputCallback) => Function
+  onBlur: (target: string | { [key: string]: string }, callback: InputCallback) => off
+  onChange: (target: string | { [key: string]: string }, callback: InputCallback) => off
+  onFocus: (target: string | { [key: string]: string }, callback: InputCallback) => off
+  onInput: (target: string | { [key: string]: string }, callback: InputCallback) => off
 }
 
 class Input implements IInput {
   constructor(private sender: ISender) {}
 
-  onBlur(target: string | { [key: string]: string }, callback: InputCallback): Function {
+  onBlur(target: string | { [key: string]: string }, callback: InputCallback): off {
     return this.sender.subscribe(INPUT.ON_BLUR, target, callback)
   }
 
-  onChange(target: string | { [key: string]: string }, callback: InputCallback): Function {
+  onChange(target: string | { [key: string]: string }, callback: InputCallback): off {
     return this.sender.subscribe(INPUT.ON_CHANGE, target, callback)
   }
 
-  onFocus(target: string | { [key: string]: string }, callback: InputCallback): Function {
+  onFocus(target: string | { [key: string]: string }, callback: InputCallback): off {
     return this.sender.subscribe(INPUT.ON_FOCUS, target, callback)
   }
 
-  onInput(target: string | { [key: string]: string }, callback: InputCallback): Function {
+  onInput(target: string | { [key: string]: string }, callback: InputCallback): off {
     return this.sender.subscribe(INPUT.ON_INPUT, target, callback)
   }
 }
 
 export interface IForm {
-  onSubmit: (target: string | { [key: string]: string }, callback: FormCallback) => Function
+  onSubmit: (target: string | { [key: string]: string }, callback: FormCallback) => off
 }
 
 class Form implements IForm {
   constructor(private sender: ISender) {}
 
-  onSubmit(target: string | { [key: string]: string }, callback: FormCallback): Function {
+  onSubmit(target: string | { [key: string]: string }, callback: FormCallback): off {
     return this.sender.subscribe(FORM.ON_SUBMIT, target, callback)
   }
 }
@@ -154,8 +156,8 @@ export interface INetwork {
   fetch: (url: string, options?: any) => Promise<any>
 
   // event handlers
-  onFetch: (match: string | { [key: string]: string }, callback: NetworkCallback) => Function
-  onHTTP: (match: string | { [key: string]: string }, callback: NetworkCallback) => Function
+  onFetch: (match: string | { [key: string]: string }, callback: NetworkCallback) => off
+  onHTTP: (match: string | { [key: string]: string }, callback: NetworkCallback) => off
 }
 
 class Network implements INetwork {
@@ -166,11 +168,11 @@ class Network implements INetwork {
   }
 
   // event handlers
-  onFetch(match: string | { [key: string]: string }, callback: NetworkCallback): Function {
+  onFetch(match: string | { [key: string]: string }, callback: NetworkCallback): off {
     return this.sender.subscribe(NETWORK.ON_FETCH, match, callback)
   }
 
-  onHTTP(match: string | { [key: string]: string }, callback: NetworkCallback): Function {
+  onHTTP(match: string | { [key: string]: string }, callback: NetworkCallback): off {
     return this.sender.subscribe(NETWORK.ON_HTTP, match, callback)
   }
 }
@@ -186,10 +188,10 @@ export interface IStore {
   setLocalStorageItem: (name: string, value: any) => Promise<any>
   setSessionStorageItem: (name: string, value: any) => Promise<any>
 
-  onCookieChange: (key: string, callback: StoreCallback) => Function
-  onCookieStoreChange: (key: string, callback: StoreCallback) => Function
-  onLocalStorageChange: (key: string, callback: StoreCallback) => Function
-  onSessionStorageChange: (key: string, callback: StoreCallback) => Function
+  onCookieChange: (key: string, callback: StoreCallback) => off
+  onCookieStoreChange: (key: string, callback: StoreCallback) => off
+  onLocalStorageChange: (key: string, callback: StoreCallback) => off
+  onSessionStorageChange: (key: string, callback: StoreCallback) => off
 }
 
 class StoreSender implements IStore {
@@ -227,19 +229,19 @@ class StoreSender implements IStore {
     return await this.sender.send(STORE.SET_SESSION_STORAGE_ITEM, name, value)
   }
 
-  onCookieChange(key: string, callback: StoreCallback): Function {
+  onCookieChange(key: string, callback: StoreCallback): off {
     return this.sender.subscribe(STORE.ON_COOKIE_CHANGE, key, callback)
   }
 
-  onCookieStoreChange(key: string, callback: StoreCallback): Function {
+  onCookieStoreChange(key: string, callback: StoreCallback): off {
     return this.sender.subscribe(STORE.ON_COOKIE_STORE_CHANGE, key, callback)
   }
 
-  onLocalStorageChange(key: string, callback: StoreCallback): Function {
+  onLocalStorageChange(key: string, callback: StoreCallback): off {
     return this.sender.subscribe(STORE.ON_LOCAL_STORAGE_CHANGE, key, callback)
   }
 
-  onSessionStorageChange(key: string, callback: StoreCallback): Function {
+  onSessionStorageChange(key: string, callback: StoreCallback): off {
     return this.sender.subscribe(STORE.ON_SESSION_STORAGE_CHANGE, key, callback)
   }
 }
@@ -248,7 +250,7 @@ export interface IPage {
   getUrl: () => Promise<any>
 
   // event handlers
-  onUrlChange: (filter: string, callback: (url: string) => void) => Function
+  onUrlChange: (filter: string, callback: (url: string) => void) => off
 }
 
 class Page implements IPage {
@@ -306,21 +308,18 @@ export class Sender implements ISender {
     this.page = new Page(this)
   }
 
-  // #postMessage(message: { id: string; path: string; data: any }) {
-  //   if (this.dispatcher instanceof Window) {
-  //     this.dispatcher.postMessage({ id, path: 'off.' + event, args: [target] }, '*')
-  //   } else {
-  //     this.dispatcher?.postMessage({ id, path: 'off.' + event, args: [target] })
-  //   }
-  // }
+  #postMessage(message: any) {
+    const origin: any = this.dispatcher === self.parent || this.dispatcher === self.opener ? '*' : undefined
+    this.dispatcher?.postMessage(message, origin)
+  }
 
   /** @private */
-  preparePayload(data: any) {
+  stringifyData(data: any) {
     return JSON.parse(JSON.stringify(data))
   }
 
   /** @private */
-  createTimeoutPromise<T>(id: string, path: string, timeout: number = 10000): Promise<T> {
+  createTimeoutPromise<T>(id: string, path: string, timeout = 10000): Promise<T> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         const promise = this.promises.get(id)
@@ -337,25 +336,13 @@ export class Sender implements ISender {
     clearTimeout(this.batchTimer)
     // if batch is full, send it max is 10
     if (this.batchMessages.length >= 10) {
-      if (this.dispatcher instanceof Window) {
-        this.dispatcher.postMessage({ batch: this.preparePayload(this.batchMessages) }, '*')
-      } else {
-        this.dispatcher?.postMessage({
-          batch: this.preparePayload(this.batchMessages),
-        })
-      }
+      this.#postMessage({ batch: this.stringifyData(this.batchMessages) })
       this.batchMessages.length = 0
       return
     }
     this.batchTimer = setTimeout(() => {
       try {
-        if (this.dispatcher instanceof Window) {
-          this.dispatcher.postMessage({ batch: this.preparePayload(this.batchMessages) }, '*')
-        } else {
-          this.dispatcher?.postMessage({
-            batch: this.preparePayload(this.batchMessages),
-          })
-        }
+        this.#postMessage({ batch: this.stringifyData(this.batchMessages) })
       } catch (e: any) {
         if (import.meta.env.DEV) {
           console.error(e.message)
@@ -372,6 +359,15 @@ export class Sender implements ISender {
     return this.createTimeoutPromise<T>(id, path)
   }
 
+  async sendRaw<T = any>(message: any) {
+    const { id, path } = message
+    this.batch(message)
+    // return this.createTimeoutPromise<T>(id, path)
+    return new Promise<T>((resolve, reject) => {
+      this.promises.set(id, { path, resolve, reject })
+    })
+  }
+
   subscribe(event: string, target: string | { [key: string]: string }, callback: any) {
     const id = createUniqueId()
     const type = 'subscription'
@@ -380,35 +376,41 @@ export class Sender implements ISender {
     return () => {
       this.eventHandlers.delete(id)
       setTimeout(() => {
-        if (this.dispatcher instanceof Window) {
-          this.dispatcher.postMessage({ id, path: 'off.' + event, args: [target] }, '*')
-        } else {
-          this.dispatcher?.postMessage({ id, path: 'off.' + event, args: [target] })
-        }
+        this.#postMessage({ id, path: 'off.' + event, args: [target] })
       }, 0)
     }
   }
 
-  connect(dispatcher: Window | Worker | MessagePort | BroadcastChannel) {
-    if (dispatcher instanceof Window || dispatcher instanceof BroadcastChannel) {
-      dispatcher.addEventListener('message', (e: any) => {
-        const { id, data, error } = e.data
-        const promise = this.promises.get(id)
-        if (promise) {
-          promise.timer && clearTimeout(promise.timer)
-          this.promises.delete(id)
-          if (error) {
-            promise.reject(error)
+  connect(dispatcher: Window | Worker | MessagePort | BroadcastChannel, receiver?: Window | Worker | MessagePort | BroadcastChannel) {
+    if (
+      dispatcher === self ||
+      dispatcher === self.opener ||
+      dispatcher === self.parent ||
+      dispatcher instanceof BroadcastChannel
+    ) {
+      if(!receiver) {
+        receiver = dispatcher
+      }
+      if (receiver !== self.opener && receiver !== self.parent) {
+        receiver.addEventListener('message', (e: any) => {
+          const { id, data, error } = e.data
+          const promise = this.promises.get(id)
+          if (promise) {
+            promise.timer && clearTimeout(promise.timer)
+            this.promises.delete(id)
+            if (error) {
+              promise.reject(error)
+            } else {
+              promise.resolve(data)
+            }
           } else {
-            promise.resolve(data)
+            const callback = this.eventHandlers.get(id)
+            if (callback) {
+              callback(data)
+            }
           }
-        } else {
-          const callback = this.eventHandlers.get(id)
-          if (callback) {
-            callback(data)
-          }
-        }
-      })
+        })
+      }
       this.dispatcher = dispatcher as any
     } else {
       dispatcher.onmessage = e => {
@@ -436,14 +438,8 @@ export class Sender implements ISender {
   }
 
   disconnect() {
-    if (this.dispatcher) {
-      // loop through all promises and reject them
-      if (this.dispatcher instanceof Window) {
-        this.dispatcher.postMessage({ id: this.id, type: 'request', path: CONNECTION.DISCONNECT }, '*')
-      } else {
-        this.dispatcher.postMessage({ id: this.id, type: 'request', path: CONNECTION.DISCONNECT })
-      }
-    }
+    // loop through all promises and reject them
+    this.#postMessage({ id: this.id, type: 'request', path: CONNECTION.DISCONNECT })
   }
 
   static create(): ISender {

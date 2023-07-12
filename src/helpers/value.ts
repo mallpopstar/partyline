@@ -2,7 +2,6 @@ export function getValue(path: string, target?: any) {
   try {
     const pathArray = path?.split('.')
     let current = target || globalThis
-    debugger
     for (let i = 0; i < pathArray.length; i++) {
       const key = pathArray[i]
       if (!current[key]) {

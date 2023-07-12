@@ -33,7 +33,17 @@ An RPC for communicating between browser windows. Send messages between browser 
 ## Installation
 
 ```sh
-npm i @totallyrad/partyline
+npm i @mallpopstar/partyline
+```
+
+## Example
+
+If you would like to see how to use Partyline, check out my [Hello Kitty](https://github.com/mallpopstar/hellokitty) project.
+
+You can also run a demo:
+
+```sh
+yarn dev
 ```
 
 ## Usage
@@ -42,7 +52,7 @@ npm i @totallyrad/partyline
 
 
 ```js
-import { Receiver, Sender } from '@totallyrad/partyline'
+import { Receiver, Sender } from '@mallpopstar/partyline'
 
 // The receiver is the API that receives messages, performs actions and sends responses
 const receiver = new Receiver()
@@ -58,7 +68,7 @@ r.on('ping', (requestId, message) => {
 const sender = new Sender()
 s.connect(window)
 
-s.send('hello', { message: 'Hello from sender!' }).then(response => {
+s.send('ping', { message: 'Hello from sender!' }).then(response => {
   console.log('pong', response)
 })
 ```

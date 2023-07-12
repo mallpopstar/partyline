@@ -13,6 +13,9 @@ import { getValue } from './helpers/value'
 
 declare const cookieStore: any
 
+export type RequestMessage = { id: string; type: 'request' | 'subscription'; path: string; args?: any }
+export type ResponseMessage = { id: string; type: 'response'; data: any }
+
 export class Receiver {
   id = createUniqueId()
 
@@ -119,7 +122,7 @@ export class Receiver {
         case FORM.ON_SUBMIT:
           return this.#on.submit(id, filter)
         case WINDOW.ON_URL_CHANGE:
-          return this.#on.urlChange(id, filter, event)
+          return this.#on.urlChange(id, filter)
         case NETWORK.ON_FETCH:
           return this.#on.fetch(id, filter)
         case NETWORK.ON_HTTP:
@@ -136,7 +139,7 @@ export class Receiver {
           return this.#on.localStorageChange(id, filter)
         default:
           console.warn('event not found', event)
-          return () => {}
+          return () => void 0
       }
     } catch (e) {
       console.warn(e)
@@ -232,7 +235,7 @@ export class Receiver {
     }
   }
 
-  async #requestHandler(message: { id: string; type: string; path: string; args: any[] }) {
+  async #requestHandler(message: RequestMessage) {
     try {
       const { id, type, path, args } = message
       if (!id || !type || !path) return
@@ -314,7 +317,7 @@ export class Receiver {
 
       if (this.#isElement(path)) {
         const opts = args[0]
-        let value = this.#execDom(path, opts)
+        const value = this.#execDom(path, opts)
         return this.#postMessage({ id, data: value })
       }
       let value = getValue(path)
@@ -340,7 +343,7 @@ export class Receiver {
     }
   }
 
-  #invoke(method: Function, path: string, args: any[], target?: any) {
+  #invoke(method: (...rest: any) => void, path: string, args: any[], target?: any) {
     try {
       // if there is a . in the path pop the last item off the path and get the value of that
       // then call the method on that value
@@ -351,7 +354,7 @@ export class Receiver {
       }
       return method.apply(thisArg, args)
     } catch (e) {
-      console.log(e)
+      console.warn(e)
     }
   }
 
@@ -423,9 +426,9 @@ export class Receiver {
 
   #postMessage(message: { id: string; data: any }) {
     try {
-      const origin = this.#dispatcher instanceof Window ? '*' : undefined
+      const origin: any = this.#dispatcher === window.parent || this.#dispatcher === window.opener ? '*' : undefined
       const msg = { ...message, type: 'response' }
-      this.#dispatcher?.postMessage(msg, origin as any)
+      this.#dispatcher?.postMessage(msg, origin)
     } catch (e) {
       console.warn(e)
     }

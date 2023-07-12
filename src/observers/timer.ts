@@ -1,4 +1,4 @@
-import mitt from '@/helpers/mitt'
+import mitt from '../helpers/mitt'
 
 const hasRequestIdleCallback = typeof window !== 'undefined' && 'requestIdleCallback' in window
 const interval = hasRequestIdleCallback ? 1000 : 3000

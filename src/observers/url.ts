@@ -1,5 +1,5 @@
 // import { debounce } from '../utils/debounce'
-import mitt from '@/helpers/mitt'
+import mitt from '../helpers/mitt'
 
 let initialized = false
 const emitter = mitt()

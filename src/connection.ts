@@ -13,10 +13,6 @@ export const sendMessagePort = (target: any, port: MessagePort) => {
     if ('postMessage' in target) {
       return target.postMessage({ type: PORT_CONNECTION }, '*', [port])
     }
-
-    if ('connect' in target) {
-      return target.connect(port)
-    }
   } catch (e) {
     console.error(e)
   }

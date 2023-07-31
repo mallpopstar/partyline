@@ -1,6 +1,6 @@
 {
   "name": "@mallpopstar/partyline",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "license": "MIT",
   "description": "Partyline is a JavaScript library that can send messages between APIs that support `postMessage`.",
   "type": "module",
@@ -30,6 +30,6 @@
     "vite-plugin-dts": "^3.4.0"
   },
   "engines": {
-    "node": "16"
+    "node": ">=16.0.0"
   }
 }

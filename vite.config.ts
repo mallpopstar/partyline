@@ -7,7 +7,7 @@ export default defineConfig({
     lib: {
       entry: './src/index.ts',
       name: 'partyline',
-      fileName: 'partyline',
+      fileName: (format) => `partyline.${format}.js`.replace('.iife', '.min'),
       formats: ['es', 'iife', 'umd'],
     },
     minify: true,

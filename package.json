@@ -9,12 +9,12 @@
     "index.d.ts"
   ],
   "main": "./dist/partyline.umd.cjs",
-  "module": "./dist/partyline.js",
+  "module": "./dist/partyline.es.js",
   "types": "./index.d.ts",
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "import": "./dist/partyline.js",
+      "import": "./dist/partyline.es.js",
       "require": "./dist/partyline.umd.cjs"
     }
   },

@@ -11,19 +11,10 @@ function isIChannel(value: any): value is IChannel {
 }
 
 class Receiver implements IReceiver {
-  // requests that are registered
   #requestHandlers: Map<string, (...args: any[]) => any> = new Map()
-  // private port
   #dispatcher?: Messenger
-  // private onDisconnect
   #disconnectHandler?: () => void
 
-  /**
-   * Connects to dispatcher
-   *
-   * @param dispatcher
-   * @param disconnectHandler
-   */
   connect(dispatcher: Messenger, disconnectHandler?: () => void) {
     if (dispatcher instanceof Window || dispatcher instanceof BroadcastChannel || isIChannel(dispatcher)) {
       dispatcher.addEventListener('message', (event: any) => {
@@ -45,9 +36,6 @@ class Receiver implements IReceiver {
     this.#dispatcher = dispatcher
   }
 
-  /**
-   * Disconnects from dispatcher
-   */
   disconnect() {
     setTimeout(() => {
       if (this.#dispatcher instanceof BroadcastChannel || this.#dispatcher instanceof MessagePort) {
@@ -58,12 +46,6 @@ class Receiver implements IReceiver {
     this.#disconnectHandler?.()
   }
 
-  /**
-   * Register a request handler
-   *
-   * @param name
-   * @param handler
-   */
   onRequest(name: string, handler: (req: RequestMessage, res: Responder) => any) {
     this.#requestHandlers.set(name, handler)
   }

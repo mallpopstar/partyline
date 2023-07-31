@@ -24,6 +24,26 @@ Partyline is a JavaScript library that can send messages between APIs that suppo
 npm install @mallpopstar/partyline
 ```
 
+### CDN
+
+You can use partyline without installing it by using a CDN. You can use either [unpkg](https://unpkg.com/) or [jsDelivr](https://www.jsdelivr.com/). If you use a CDN, you can access the library via the `Partyline` global variable.
+
+```js
+const { createReceiver, createSender } = partyline
+```
+
+**Using unpkg**
+
+```html
+<script src="https://unpkg.com/@mallpopstar/partyline@latest/dist/partyline.min.js"></script>
+```
+
+**Using jsDelivr**
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@mallpopstar/partyline@latest/dist/partyline.min.js"></script>
+```
+
 ## Running the examples in this repo
 
 Clone the repo and run the following commands:
@@ -271,3 +291,7 @@ There are a few other libraries that do similar things to Partyline:
 - https://github.com/AshleyScirra/via.js
 
 If you are looking for a library that can load 3rd-party js files and fill in the gaps, check out [Partytown 🎉](https://partytown.builder.io/).
+
+## License
+
+Partyline is licensed under the MIT license.

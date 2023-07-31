@@ -1,4 +1,4 @@
-name: NPM Publish
+name: Publish and Release
 
 on:
   push:
@@ -6,17 +6,26 @@ on:
      - main
 
 jobs:
-  publish:
+  release-on-push:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: rymndhng/release-on-push-action@master
         with:
-          node-version: 16
-      - run: yarn
-      - run: yarn build
-      - uses: JS-DevTools/npm-publish@v2
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
-          access: public
-          
+          bump_version_scheme: minor
+          dry_run: true
+  # publish:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 16
+  #     - run: yarn
+  #     - run: yarn build
+  #     - uses: JS-DevTools/npm-publish@v2
+  #       with:
+  #         token: ${{ secrets.NPM_TOKEN }}
+  #         access: public
+  #         dry-run: true

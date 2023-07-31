@@ -20,9 +20,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "npm:publish": "npm publish --access public",
-    "npm:dry-run": "npm publish --dry-run"
+    "build": "tsc && vite build"
   },
   "devDependencies": {
     "@types/node": "^20.4.5",

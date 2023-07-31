@@ -1,3 +1,4 @@
-export { onMessagePort, sendMessagePort } from './connection'
-export { Receiver } from './receiver'
-export { Sender } from './sender'
+export { createReceiver } from './receiver'
+export { createSender } from './sender'
+export { loadWorker } from './helpers'
+export type { IReceiver, ISender, IChannel } from './types'

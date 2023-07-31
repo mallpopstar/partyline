@@ -1,60 +1,38 @@
-import { CONNECTION } from './consts/connection'
-import { Cookie } from './storage/cookie'
-import { DocumentElement } from './dom/element'
-import { ELEMENT } from './consts/element'
-import { FORM } from './consts/form'
-import { INPUT } from './consts/input'
-import { NETWORK } from './consts/network'
-import { Observer } from './observer'
-import { STORE } from './consts/store'
-import { WINDOW } from './consts/page'
-import { createUniqueId } from './helpers/createUniqueId'
-import { getValue } from './helpers/value'
+import { IChannel, IReceiver, Messenger, RequestMessage, Responder, ResponseMessage } from "./types"
 
-declare const cookieStore: any
+function isIChannel(value: any): value is IChannel {
+  return (
+    value &&
+    typeof value === 'object' &&
+    typeof value.postMessage === 'function' &&
+    typeof value.addEventListener === 'function' &&
+    typeof value.removeEventListener === 'function'
+  )
+}
 
-export type RequestMessage = { id: string; type: 'request' | 'subscription'; path: string; args?: any }
-export type ResponseMessage = { id: string; type: 'response'; data: any }
-
-export class Receiver {
-  id = createUniqueId()
-
-  // custom requests for overriding default paths
-  #customRequests: Map<string, (...args: any[]) => any> = new Map()
-  // cookie is used as paths on execOn
-  #cookie = new Cookie()
-  // session is used as paths on execOn
-  #sessionStorage = sessionStorage
-  // localStorage is used as paths on execOn
-  #localStorage = localStorage
-  // cookieStore
-  #cookieStore = cookieStore
-  // on is used as paths on execOn
-  #on = new Observer()
-  // dom is used as paths on execOn
-  #element = new DocumentElement()
+class Receiver implements IReceiver {
+  // requests that are registered
+  #requestHandlers: Map<string, (...args: any[]) => any> = new Map()
   // private port
-  #dispatcher?: Window | Worker | MessagePort | BroadcastChannel
-  // logs messages to a handler
-  #logger?: (...args: any[]) => void
+  #dispatcher?: Messenger
   // private onDisconnect
-  #onDisconnect?: () => void
+  #disconnectHandler?: () => void
 
   /**
-   * Connects to the host application
+   * Connects to dispatcher
    *
    * @param dispatcher
-   * @param onDisconnect
+   * @param disconnectHandler
    */
-  connect(dispatcher: Window | Worker | MessagePort | BroadcastChannel, onDisconnect?: () => void) {
-    if (dispatcher instanceof Window || dispatcher instanceof BroadcastChannel) {
+  connect(dispatcher: Messenger, disconnectHandler?: () => void) {
+    if (dispatcher instanceof Window || dispatcher instanceof BroadcastChannel || isIChannel(dispatcher)) {
       dispatcher.addEventListener('message', (event: any) => {
         if (event.data.batch) {
           return event.data.batch.forEach((payload: any) => this.#requestHandler(payload))
         }
         this.#requestHandler(event.data)
       })
-      this.#onDisconnect = onDisconnect
+      this.#disconnectHandler = disconnectHandler
     } else {
       dispatcher.onmessage = async (event: any) => {
         if (event.data.batch) {
@@ -62,375 +40,121 @@ export class Receiver {
         }
         this.#requestHandler(event.data)
       }
-      this.#onDisconnect = onDisconnect
+      this.#disconnectHandler = disconnectHandler
     }
     this.#dispatcher = dispatcher
-    this.#on.dispatcher = dispatcher
   }
 
   /**
-   * Disconnects from the host application
+   * Disconnects from dispatcher
    */
   disconnect() {
-    this.#on.execDisconnect()
     setTimeout(() => {
       if (this.#dispatcher instanceof BroadcastChannel || this.#dispatcher instanceof MessagePort) {
         this.#dispatcher?.close()
       }
       this.#dispatcher = undefined
     }, 1000)
-    this.#onDisconnect?.()
+    this.#disconnectHandler?.()
   }
 
   /**
-   * Register a custom path or override a default path
+   * Register a request handler
    *
-   * @param event
-   * @param callback
+   * @param name
+   * @param handler
    */
-  on(event: string, callback: (requestId: string, ...args: any[]) => any) {
-    this.#customRequests.set(event, callback)
+  onRequest(name: string, handler: (req: RequestMessage, res: Responder) => any) {
+    this.#requestHandlers.set(name, handler)
   }
 
-  /**
-   * Logs messages to a handler
-   *
-   * @param logger
-   */
-  log(logger: (...args: any[]) => void) {
-    this.#logger = logger
+  onSubscribe(event: string, handler: (req: RequestMessage, res: Responder) => void) {
+    this.#requestHandlers.set(event + ':subscribe', (req, res) => {
+      req.name = this.#cleanupName(req.name) // remove :subscribe from name before calling handler
+      handler(req, res)
+    })
   }
 
-  #execOn(id: string, filter: string, event: string) {
+  onUnsubscribe(event: string, handler: (req: RequestMessage, res: Responder) => any) {
+    this.#requestHandlers.set(event + ':unsubscribe', (req, res) => {
+      req.name = this.#cleanupName(req.name) // remove :unsubscribe from name before calling handler
+      handler(res, res)
+    })
+  }
+
+  removeHandler(name: string, type: 'request' | 'subscription' = 'request') {
+    if (type === 'request') {
+      this.#requestHandlers.delete(name)
+    } else {
+      this.#requestHandlers.delete(name + ':subscribe')
+      this.#requestHandlers.delete(name + ':unsubscribe')
+    }
+  }
+
+  removeAllHandlers(match?: RegExp) {
+    if (match instanceof RegExp) {
+      this.#requestHandlers.forEach((_, key) => {
+        if (match.test(key)) {
+          this.#requestHandlers.delete(key)
+        }
+      })
+    } else {
+      this.#requestHandlers.clear()
+    }
+  }
+
+  async #requestHandler(req: RequestMessage) {
     try {
-      filter = filter + '' === '*' ? '' : filter + ''
-      switch (event) {
-        case ELEMENT.ON_CLICK:
-        case ELEMENT.ON_MOUSEDOWN:
-        case ELEMENT.ON_MOUSEUP:
-        case ELEMENT.ON_HOVER:
-          return this.#on.pointerEvent(id, filter, event)
-        case ELEMENT.ON_EXISTS:
-          return this.#on.presentChange(id, filter)
-        case ELEMENT.ON_MUTATION:
-          return this.#on.mutation(id, filter)
-        case INPUT.ON_INPUT:
-        case INPUT.ON_CHANGE:
-        case INPUT.ON_FOCUS:
-        case INPUT.ON_BLUR:
-          return this.#on.inputEvent(id, filter, event)
-        case FORM.ON_SUBMIT:
-          return this.#on.submit(id, filter)
-        case WINDOW.ON_URL_CHANGE:
-          return this.#on.urlChange(id, filter)
-        case NETWORK.ON_FETCH:
-          return this.#on.fetch(id, filter)
-        case NETWORK.ON_HTTP:
-          return this.#on.httpRequest(id, filter)
-        case CONNECTION.ON_DISCONNECT:
-          return this.#on.disconnect(id)
-        case STORE.ON_COOKIE_CHANGE:
-          return this.#on.cookieChange(id, filter)
-        case STORE.ON_SESSION_STORAGE_CHANGE:
-          return this.#on.sessionStorageChange(id, filter)
-        case STORE.ON_COOKIE_STORE_CHANGE:
-          return this.#on.cookieStorageChange(id, filter)
-        case STORE.ON_LOCAL_STORAGE_CHANGE:
-          return this.#on.localStorageChange(id, filter)
-        default:
-          console.warn('event not found', event)
-          return () => void 0
-      }
-    } catch (e) {
-      console.warn(e)
-    }
-  }
-
-  /**
-   *
-   * @param path
-   * @param selector
-   * @param value HTML or styles
-   * @param position
-   * @returns
-   */
-  #execDom(
-    path: string,
-    opts: {
-      selector: string
-      html?: string
-      styles?: string
-      classes?: string
-      applyToAll?: boolean
-      position?: InsertPosition
-    }
-  ) {
-    const { selector, applyToAll } = opts
-
-    switch (path) {
-      case ELEMENT.EXISTS:
-        return this.#element.exists(opts)
-      case ELEMENT.ADD:
-        if (!selector || !opts.html) return
-        if (applyToAll)
-          return this.#element.addToAll({
-            selector,
-            html: opts.html,
-            position: opts.position,
-          })
-        return this.#element.add({
-          selector,
-          html: opts.html,
-          position: opts.position,
-        })
-      case ELEMENT.FIND:
-        if (applyToAll) return this.#element.getAll(opts)
-        return this.#element.get(opts)
-      case ELEMENT.REMOVE:
-        if (applyToAll) return this.#element.removeAll(opts)
-        return this.#element.remove(opts)
-      case ELEMENT.REPLACE:
-        if (applyToAll)
-          return this.#element.replaceAll({
-            selector,
-            html: opts.html || '',
-          })
-        return this.#element.replace({
-          selector,
-          html: opts.html || '',
-        })
-      case ELEMENT.ADD_STYLES:
-        if (applyToAll)
-          return this.#element.addStylesToAll({
-            selector,
-            styles: opts.styles || '',
-          })
-        return this.#element.addStyles({
-          selector,
-          styles: opts.styles || '',
-        })
-      case ELEMENT.RESTORE_STYLES:
-        if (applyToAll) return this.#element.restoreStylesToAll()
-        return this.#element.restoreStyles(opts)
-      case ELEMENT.ADD_CLASSES:
-        if (applyToAll)
-          return this.#element.addClassesToAll({
-            selector,
-            classes: opts.classes || '',
-          })
-        return this.#element.addClasses({
-          selector,
-          classes: opts.classes || '',
-        })
-      case ELEMENT.REMOVE_CLASSES:
-        if (applyToAll)
-          return this.#element.removeClassesToAll({
-            selector,
-            classes: opts.classes || '',
-          })
-        return this.#element.removeClasses({
-          selector,
-          classes: opts.classes || '',
-        })
-    }
-  }
-
-  async #requestHandler(message: RequestMessage) {
-    try {
-      const { id, type, path, args } = message
-      if (!id || !type || !path) return
-      // log the message
-      this.#logger?.(message)
-      // check if the path is a custom path
-      if (this.#customRequests.has(path)) {
-        let value = this.#customRequests.get(path)?.(id, ...args)
-        if (this.#isPromise(value)) {
-          value = await value
-        }
-        return this.#postMessage({ id, data: value })
+      if (['request', 'subscription'].includes(req.type) === false) return
+      const res: Responder = {
+        send: (body?: any) => {
+          this.#postMessage(req, body)
+        },
       }
 
-      if (this.#isFetch(path)) {
-        const [url, options] = args
-        return this.#fetch(id, url, options)
+      if (this.#requestHandlers.has(req.name)) {
+        this.#requestHandlers.get(req.name)?.(req, res)
+      } else if (this.#requestHandlers.has('*')) {
+        this.#requestHandlers.get('*')?.(req, res)
+      } else {
+        this.#postMessage(req, new Error(`Request "${req.name}" not found`))
       }
-
-      if (this.#isOff(path)) {
-        return this.#on.off(id)
-      }
-
-      if (this.#isOn(path)) {
-        return this.#execOn(id, args?.[0], path)
-      }
-
-      if (this.#isDisconnect(path)) {
-        return this.disconnect()
-      }
-
-      if (this.#isCookie(path)) {
-        const target = { cookie: this.#cookie }
-        let value = getValue(path, target)
-        if (this.#isFunction(value)) {
-          value = this.#invoke(value, path, args, target)
-          if (this.#isPromise(value)) {
-            value = await value
-          }
-          return this.#postMessage({ id, data: value })
-        }
-      }
-
-      if (this.#isSessionStorage(path)) {
-        const target = { storage: this.#sessionStorage }
-        let value = getValue(path, target)
-        if (this.#isFunction(value)) {
-          value = this.#invoke(value, path, args, target)
-          if (this.#isPromise(value)) {
-            value = await value
-          }
-          return this.#postMessage({ id, data: value })
-        }
-      }
-
-      if (this.#isLocalStorage(path)) {
-        const target = { storage: this.#localStorage }
-        let value = getValue(path, target)
-        if (this.#isFunction(value)) {
-          value = this.#invoke(value, path, args, target)
-          if (this.#isPromise(value)) {
-            value = await value
-          }
-          return this.#postMessage({ id, data: value })
-        }
-      }
-
-      if (this.#isCookieStore(path)) {
-        const target = { storage: this.#cookieStore }
-        let value = getValue(path, target)
-        if (this.#isFunction(value)) {
-          value = this.#invoke(value, path, args, target)
-          if (this.#isPromise(value)) {
-            value = await value
-          }
-          return this.#postMessage({ id, data: value })
-        }
-      }
-
-      if (this.#isElement(path)) {
-        const opts = args[0]
-        const value = this.#execDom(path, opts)
-        return this.#postMessage({ id, data: value })
-      }
-      let value = getValue(path)
-      if (this.#isFunction(value)) {
-        value = this.#invoke(value, path, args)
-      }
-
-      try {
-        // check if the result is a promise
-        if (this.#isPromise(value)) {
-          value = await value
-        } // check if html element
-        else if (this.#isHTMLElement(value)) {
-          value = value.outerHTML
-        }
-      } catch (e) {
-        value = undefined
-      }
-
-      this.#postMessage({ id, data: value })
     } catch (e: any) {
-      this.#postMessage({ id: message.id, data: { error: e.message } })
+      this.#postMessage(e)
     }
   }
 
-  #invoke(method: (...rest: any) => void, path: string, args: any[], target?: any) {
+  #cleanupName(name: string) {
+    return name.replace(/(.*):\w+/g, '$1')
+  }
+
+  #postMessage(req: RequestMessage, body?: any) {
     try {
-      // if there is a . in the path pop the last item off the path and get the value of that
-      // then call the method on that value
-      let thisArg = window
-      if (path?.includes('.')) {
-        const thisPath = path?.split('.').slice(0, -1).join('.')
-        thisArg = getValue(thisPath, target)
+      const message: ResponseMessage = {
+        id: req.id,
+        senderId: req.senderId,
+        type: 'response',
+        name: req.name,
+        body,
       }
-      return method.apply(thisArg, args)
-    } catch (e) {
-      console.warn(e)
-    }
-  }
 
-  #isOn(path: string) {
-    return path?.includes('.on')
-  }
-
-  #isOff(path: string) {
-    return path?.includes('off.')
-  }
-
-  #isCookie(path: string) {
-    return path?.startsWith('cookie')
-  }
-
-  #isSessionStorage(path: string) {
-    return path?.startsWith('sessionStorage')
-  }
-
-  #isLocalStorage(path: string) {
-    return path?.startsWith('localStorage')
-  }
-
-  #isCookieStore(path: string) {
-    return path?.startsWith('cookieStore')
-  }
-
-  #isElement(path: string) {
-    return path?.startsWith('element')
-  }
-
-  #isFunction(val: any) {
-    if (!val) return false
-    return typeof val === 'function'
-  }
-
-  #isPromise(val: any) {
-    if (!val) return false
-    return val instanceof Promise
-  }
-
-  #isHTMLElement(val: any) {
-    if (!val) return false
-    return val instanceof Element
-  }
-
-  #isFetch(path: string) {
-    return path === NETWORK.FETCH
-  }
-
-  #isDisconnect(path: string) {
-    return path === CONNECTION.DISCONNECT
-  }
-
-  async #fetch(id: string, url: string, options: any) {
-    try {
-      const response = await fetch(url, options)
-      if (response.ok) {
-        const data = await response.text()
-        this.#postMessage({ id, data: (data + '').trim() })
-        return { data }
+      if (req.type === 'subscription') {
+        message.type = 'event'
+        // remove .subscribe or .unsubscribe from name
+        message.name = this.#cleanupName(req.name)
+      } else if (req.body instanceof Error) {
+        message.type = 'error'
+        message.body = { name: req.body.name, message: req.body.message, cause: req.body.cause }
       }
-      return { error: response.statusText }
-    } catch (e: any) {
-      this.#postMessage({ id, data: { error: e.message } })
-      return { error: e.message }
-    }
-  }
 
-  #postMessage(message: { id: string; data: any }) {
-    try {
       const origin: any = this.#dispatcher === window.parent || this.#dispatcher === window.opener ? '*' : undefined
-      const msg = { ...message, type: 'response' }
-      this.#dispatcher?.postMessage(msg, origin)
+      this.#dispatcher?.postMessage(message, origin)
     } catch (e) {
       console.warn(e)
     }
   }
+}
+
+export const createReceiver = (): IReceiver => {
+  return new Receiver()
 }

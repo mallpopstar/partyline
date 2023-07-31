@@ -282,7 +282,7 @@ class MyChannel implements IChannel {
 }
 ```
 
-## Alternatives to Partyline
+## Related projects
 
 There are a few other libraries that do similar things to Partyline:
 

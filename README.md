@@ -18,6 +18,22 @@ Partyline is a JavaScript library that can send messages between APIs that suppo
 - Written in TypeScript
 - Tree-shakes unused library code
 
+## Installation
+
+```bash
+npm install @mallpopstar/partyline
+```
+
+## Running the examples in this repo
+
+Clone the repo and run the following commands:
+
+```bash
+npm install
+npm run dev
+```
+Open the link indicated in your console. Open your console in the browser to see the logs.
+
 ## Basic usage
 
 ```js

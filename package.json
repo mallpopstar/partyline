@@ -19,7 +19,7 @@
     }
   },
   "scripts": {
-    "serve": "vite",
+    "dev": "vite",
     "build": "tsc && vite build",
     "npm:publish": "npm publish --access public",
     "npm:dry-run": "npm publish --dry-run"

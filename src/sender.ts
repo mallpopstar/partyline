@@ -5,19 +5,12 @@ interface SenderOptions {
 
 class Sender implements ISender {
   #id = crypto.randomUUID()
-  /** @private */
   #messenger?: Messenger
-  /** @private */
   #timer: any = null
-  /** @private */
   #batchedRequests: any = []
-  /** @private */
   #promises: Map<string, any> = new Map()
-  /** @private */
   #eventHandlers: Map<string, any> = new Map()
-  /** @private */
   #receiver?: Messenger
-  /** @private */
   #options: SenderOptions = {
     timeout: 10000,
   }
@@ -51,7 +44,6 @@ class Sender implements ISender {
     this.#options = { ...this.#options, ...options }
   }
 
-  /** @private */
   #convertToObject(value: any) {
     return JSON.parse(JSON.stringify(value))
   }

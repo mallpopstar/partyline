@@ -28,10 +28,6 @@ npm install @mallpopstar/partyline
 
 You can use partyline without installing it by using a CDN. You can use either [unpkg](https://unpkg.com/) or [jsDelivr](https://www.jsdelivr.com/). If you use a CDN, you can access the library via the `Partyline` global variable.
 
-```js
-const { createReceiver, createSender } = partyline
-```
-
 **Using unpkg**
 
 ```html
@@ -42,6 +38,13 @@ const { createReceiver, createSender } = partyline
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@mallpopstar/partyline@latest/dist/partyline.min.js"></script>
+```
+
+The library will be available on a global variable named `partyline`.
+
+
+```js
+const { createReceiver, createSender } = partyline
 ```
 
 ## Running the examples in this repo

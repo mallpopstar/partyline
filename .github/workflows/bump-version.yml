@@ -6,7 +6,7 @@ on:
      - main
 
 jobs:
-  publish:
+  version-bump:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -24,9 +24,9 @@ jobs:
       - name:  automate-version-bump
         uses:  'phips28/gh-action-bump-version@master'
         with:
-          major-wording:  '(major),breaking,breaks,break'
-          minor-wording:  '(minor),feat,feature,features'
-          patch-wording:  '(patch),fix,bugfix'     # Providing patch-wording will override commits
+          major-wording:  '(major),break:'
+          minor-wording:  '(minor),feat:,feature:'
+          patch-wording:  '(patch),fix:,bugfix:'     # Providing patch-wording will override commits
                                             # defaulting to a patch bump.
           rc-wording:     '(alpha),(rc)'           # Providing rc-wording will override commits
                                             # defaulting to a release candidate bump.

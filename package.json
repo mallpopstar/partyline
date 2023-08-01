@@ -4,6 +4,24 @@
   "license": "MIT",
   "description": "Partyline is a JavaScript library that can send messages between APIs that support `postMessage`.",
   "type": "module",
+  "keywords": [
+    "cross-domain",
+    "cross domain",
+    "messagechannel",
+    "broadcastchannel",
+    "iframe",
+    "postmessage",
+    "webrtc",
+    "webworker",
+    "web worker",
+    "worker",
+    "websocket",
+    "remote"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mallpopstar/partyline"
+  },
   "files": [
     "dist",
     "index.d.ts"

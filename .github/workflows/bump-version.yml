@@ -24,11 +24,19 @@ jobs:
       - name:  automate-version-bump
         uses:  'phips28/gh-action-bump-version@master'
         with:
+          # These words need to be part of a commit to trigger
+          # They are purposefully complex to avoid accidental triggers
           major-wording:  '(major),break:'
           minor-wording:  '(minor),feat:,feature:'
-          patch-wording:  '(patch),fix:,bugfix:'     # Providing patch-wording will override commits
-                                            # defaulting to a patch bump.
-          rc-wording:     '(alpha),(rc)'           # Providing rc-wording will override commits
-                                            # defaulting to a release candidate bump.
-          tag-prefix:  'v'
-
+          patch-wording:  '(patch),fix:,bugfix:'
+          # needs to be empty for all pushes to be prerelease
+          rc-wording: ''
+        
+          # defaulting to bump prerelease version--default is patch
+          default: prerelease
+          preid: 'rc'
+        
+          tag-prefix: 'v'
+        
+          target-branch: 'main'
+          commit-message: 'CI: bumps version to {{version}}'

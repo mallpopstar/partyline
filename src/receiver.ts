@@ -16,7 +16,15 @@ class Receiver implements IReceiver {
   #disconnectHandler?: () => void
 
   connect(dispatcher: Messenger, disconnectHandler?: () => void) {
-    if (dispatcher instanceof Window || dispatcher instanceof BroadcastChannel || isIChannel(dispatcher)) {
+    if(dispatcher instanceof MessagePort) {
+      dispatcher.onmessage = async (event: any) => {
+        if (event.data.batch) {
+          return event.data.batch.forEach((payload: any) => this.#requestHandler(payload))
+        }
+        this.#requestHandler(event.data)
+      }
+      this.#disconnectHandler = disconnectHandler
+    } else if (isIChannel(dispatcher)) {
       dispatcher.addEventListener('message', (event: any) => {
         if (event.data.batch) {
           return event.data.batch.forEach((payload: any) => this.#requestHandler(payload))
@@ -25,13 +33,7 @@ class Receiver implements IReceiver {
       })
       this.#disconnectHandler = disconnectHandler
     } else {
-      dispatcher.onmessage = async (event: any) => {
-        if (event.data.batch) {
-          return event.data.batch.forEach((payload: any) => this.#requestHandler(payload))
-        }
-        this.#requestHandler(event.data)
-      }
-      this.#disconnectHandler = disconnectHandler
+      console.warn('dispatcher does not implement IChannel')
     }
     this.#dispatcher = dispatcher
   }

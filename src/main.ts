@@ -6,6 +6,12 @@ import { createSender } from './sender'
 const receiver = createReceiver()
 receiver.connect(window)
 
+// const channel = new MessageChannel()
+// receiver.connect(channel.port1)
+
+// const channel = new BroadcastChannel('test')
+// receiver.connect(channel)
+
 receiver.onRequest('ping', (req, res) => {
   console.log('ping', req)
   res.send('Hello from receiver!')
@@ -19,6 +25,8 @@ receiver.onSubscribe('foo', (req, res) => {
 // send request to receiver
 const sender = createSender()
 sender.connect(window)
+// sender.connect(channel.port2)
+// sender.connect(channel)
 
 sender.postRequest('ping', 'Hello from sender!').then(response => {
   console.log('pong', response)

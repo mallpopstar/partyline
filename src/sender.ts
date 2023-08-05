@@ -87,6 +87,7 @@ class Sender implements ISender {
   }
 
   async postRequest<T = any>(name = '', body?: any) {
+    if(!this.#messenger) throw new Error('sender not connected')
     const id = crypto.randomUUID()
     const type = 'request'
     const senderId = this.#id
@@ -95,6 +96,7 @@ class Sender implements ISender {
   }
 
   subscribe(event: string, ...args: any[]) {
+    if(!this.#messenger) throw new Error('sender not connected')
     let handler: any
     let options: any
     if (args[0] instanceof Function) {
@@ -137,6 +139,7 @@ class Sender implements ISender {
   }
 
   disconnect() {
+    if (!this.#messenger) return
     // loop through all promises and reject them
     this.#postMessage({ id: this.#id, type: 'request', name: 'disconnect' })
     this.#eventHandlers.clear()

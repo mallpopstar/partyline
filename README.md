@@ -120,6 +120,8 @@ sender.postRequest('ping', { message: 'Hello from sender!' }).then(res => {
 
 **From the main thread**
 
+Click here to see a [live example](https://mallpopstar.github.io/partyline-worker-example/).
+
 ```ts
 import { createReceiver, loadWorker } from '@mallpopstar/partyline'
 

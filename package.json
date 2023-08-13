@@ -26,14 +26,14 @@
     "dist",
     "index.d.ts"
   ],
-  "main": "./dist/partyline.umd.cjs",
+  "main": "./dist/partyline.umd.js",
   "module": "./dist/partyline.es.js",
   "types": "./index.d.ts",
   "exports": {
     ".": {
       "types": "./index.d.ts",
       "import": "./dist/partyline.es.js",
-      "require": "./dist/partyline.umd.cjs"
+      "require": "./dist/partyline.umd.js"
     }
   },
   "scripts": {

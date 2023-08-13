@@ -2,6 +2,16 @@
 
 Partyline is a JavaScript library that can send messages between APIs that support `postMessage`. It is designed to allow you to create your own APIs that can communicate with each other, even if they are loaded from different origins.
 
+<a href="https://www.npmjs.com/package/@mallpopstar/partyline">
+  <img src="https://img.shields.io/npm/v/@mallpopstar/partyline?style=for-the-badge" alt="npm version" />
+</a>
+<a href="https://img.shields.io/github/license/mallpopstar/partyline?style=for-the-badge">
+  <img src="https://img.shields.io/github/license/mallpopstar/partyline?style=for-the-badge" alt="license" />
+</a>
+<a href="https://bundlephobia.com/result?p=@mallpopstar/partyline">
+  <img src="https://img.shields.io/bundlephobia/minzip/@mallpopstar/partyline?style=for-the-badge" alt="bundle size" />
+</a>
+
 ## Features
 
 - Send messages from APIs that support `postMessage` to any other API that supports `postMessage`, including:
